@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>글쓰기 - 도래울베이스</title>
+    <title>글 수정 - 도래울베이스</title>
     <style>
         * {
             margin: 0;
@@ -363,8 +363,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>✍️ 글쓰기</h1>
-            <p>커뮤니티 규칙을 준수하여 게시글을 작성해주세요.</p>
+            <h1>✏️ 글 수정</h1>
+            <p>게시글 내용을 수정할 수 있습니다.</p>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
@@ -421,30 +421,33 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>캡챠 인증 *</label>
-                <div class="captcha-box">
-                    <div class="captcha-question" id="captchaQuestion">로딩 중...</div>
-                    <input type="text" class="captcha-input" id="captchaAnswer" placeholder="답을 입력하세요" required>
-                </div>
-            </div>
-
             <div class="button-group">
                 <button type="button" class="cancel-btn" onclick="goBack()">취소</button>
-                <button type="submit" class="submit-btn" id="submitBtn">작성 완료</button>
+                <button type="submit" class="submit-btn" id="submitBtn">수정 완료</button>
             </div>
         </form>
     </div>
 
     <script>
         let currentUser = null;
-        let captchaToken = null;
         let uploadedFiles = []; // 업로드된 파일 정보 저장
+        let postId = null;
+        let originalPost = null;
 
         // 페이지 로드 시 실행
         window.addEventListener('load', async () => {
+            // URL에서 게시글 ID 가져오기
+            const urlParams = new URLSearchParams(window.location.search);
+            postId = urlParams.get('id');
+
+            if (!postId) {
+                alert('잘못된 접근입니다.');
+                window.location.href = '/';
+                return;
+            }
+
             await checkLogin();
-            await loadCaptcha();
+            await loadPost();
             setupCategoryCheck();
             setupFileUpload();
             setupPasteImage();
@@ -470,18 +473,46 @@
             }
         }
 
-        // 캡챠 로드
-        async function loadCaptcha() {
+        // 기존 게시글 데이터 로드
+        async function loadPost() {
             try {
-                const response = await fetch('/api/captcha');
+                const response = await fetch(`/api/posts/${postId}`);
                 const data = await response.json();
 
-                if (data.success) {
-                    document.getElementById('captchaQuestion').textContent = data.question;
+                if (!data.success) {
+                    throw new Error(data.message);
                 }
+
+                originalPost = data.post;
+
+                // 권한 확인 (작성자 본인 또는 관리자만 수정 가능)
+                if (currentUser.id !== originalPost.authorId && currentUser.role !== 'admin') {
+                    alert('수정 권한이 없습니다.');
+                    window.location.href = `/post-detail?id=${postId}`;
+                    return;
+                }
+
+                // 폼에 데이터 채우기
+                document.getElementById('category').value = originalPost.category;
+                document.getElementById('title').value = originalPost.title;
+                document.getElementById('content').value = originalPost.content;
+
+                // 기존 첨부파일 로드
+                if (originalPost.images && originalPost.images.length > 0) {
+                    uploadedFiles = uploadedFiles.concat(originalPost.images);
+                }
+                if (originalPost.files && originalPost.files.length > 0) {
+                    uploadedFiles = uploadedFiles.concat(originalPost.files);
+                }
+
+                if (uploadedFiles.length > 0) {
+                    renderFileList();
+                }
+
             } catch (error) {
-                console.error('캡챠 로드 실패:', error);
-                document.getElementById('captchaQuestion').textContent = '캡챠 로드 실패';
+                console.error('게시글 로드 실패:', error);
+                alert('게시글을 불러올 수 없습니다.');
+                window.location.href = '/';
             }
         }
 
@@ -669,10 +700,9 @@
             const category = document.getElementById('category').value;
             const title = document.getElementById('title').value.trim();
             const content = document.getElementById('content').value.trim();
-            const captchaAnswer = document.getElementById('captchaAnswer').value.trim();
 
             // 유효성 검사
-            if (!category || !title || !content || !captchaAnswer) {
+            if (!category || !title || !content) {
                 showError('모든 필수 항목을 입력해주세요.');
                 return;
             }
@@ -685,61 +715,40 @@
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.textContent = '작성 중...';
+            submitBtn.textContent = '수정 중...';
 
             try {
-                // 1. 캡챠 검증
-                const captchaResponse = await fetch('/api/captcha/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ answer: captchaAnswer })
-                });
-
-                const captchaData = await captchaResponse.json();
-
-                if (!captchaData.success) {
-                    showError('캡챠 답이 틀렸습니다. 다시 시도해주세요.');
-                    await loadCaptcha();
-                    document.getElementById('captchaAnswer').value = '';
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '작성 완료';
-                    return;
-                }
-
-                captchaToken = captchaData.token;
-
                 // 이미지와 파일 분리
                 const images = uploadedFiles.filter(f => f.type.startsWith('image/'));
                 const files = uploadedFiles.filter(f => !f.type.startsWith('image/'));
 
-                // 2. 게시글 작성
-                const postResponse = await fetch('/api/posts', {
-                    method: 'POST',
+                // 게시글 수정 (PUT 요청)
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         category,
                         title,
                         content,
-                        captchaToken,
                         images,
                         files
                     })
                 });
 
-                const postData = await postResponse.json();
+                const data = await response.json();
 
-                if (postData.success) {
-                    alert('게시글이 작성되었습니다!');
-                    window.location.href = '/';
+                if (data.success) {
+                    alert('게시글이 수정되었습니다!');
+                    window.location.href = `/post-detail?id=${postId}`;
                 } else {
-                    throw new Error(postData.message);
+                    throw new Error(data.message);
                 }
 
             } catch (error) {
-                console.error('게시글 작성 실패:', error);
-                showError(error.message || '게시글 작성에 실패했습니다.');
+                console.error('게시글 수정 실패:', error);
+                showError(error.message || '게시글 수정에 실패했습니다.');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '작성 완료';
+                submitBtn.textContent = '수정 완료';
             }
         });
 
@@ -759,8 +768,8 @@
         }
 
         function goBack() {
-            if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
-                window.location.href = '/';
+            if (confirm('수정 중인 내용이 사라집니다. 취소하시겠습니까?')) {
+                window.location.href = `/post-detail?id=${postId}`;
             }
         }
     </script>

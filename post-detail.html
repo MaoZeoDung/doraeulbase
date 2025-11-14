@@ -126,6 +126,151 @@
             word-wrap: break-word;
         }
 
+        /* 첨부 이미지 갤러리 */
+        .attachments-section {
+            padding: 20px 40px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .attachments-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .images-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e0e0e0;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-item-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .file-item-display:hover {
+            background: #e9ecef;
+        }
+
+        .file-icon-display {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .file-info-display {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name-display {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-size-display {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .file-download {
+            padding: 10px 20px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .file-download:hover {
+            background: #357abd;
+        }
+
+        /* 이미지 모달 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 10px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #ddd;
+        }
+
         .post-actions {
             padding: 20px 40px;
             background: #f8f9fa;
@@ -172,6 +317,24 @@
 
         .list-btn:hover {
             background: #357abd;
+        }
+
+        .edit-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #f57c00;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f;
         }
 
         /* 댓글 섹션 */
@@ -511,6 +674,12 @@
             </div>
         </div>
 
+        <!-- 이미지 모달 -->
+        <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+            <button class="modal-close">&times;</button>
+            <img src="" alt="이미지" class="modal-image" id="modalImage">
+        </div>
+
         <!-- 댓글 -->
         <div class="comments-container">
             <div class="comments-header">
@@ -606,7 +775,7 @@
         // 게시글 렌더링
         function renderPost() {
             const container = document.getElementById('postContainer');
-            
+
             const categoryClass = currentPost.category === 'notice' ? 'notice' : '';
             const adminBadge = currentPost.authorInfo?.role === 'admin' ? '<span class="admin-badge">[관리자]</span>' : '';
             const authorName = currentPost.authorInfo ? currentPost.authorInfo.name : currentPost.author;
@@ -617,6 +786,57 @@
             const isLiked = likeStatus.posts[currentPost.id] || false;
             const likeClass = isLiked ? 'liked' : '';
             const likeText = isLiked ? '❤️' : '🤍';
+
+            // 이미지 갤러리 렌더링
+            let imagesHTML = '';
+            if (currentPost.images && currentPost.images.length > 0) {
+                imagesHTML = `
+                    <div class="attachments-section">
+                        <div class="attachments-title">📷 첨부 이미지 (${currentPost.images.length})</div>
+                        <div class="images-gallery">
+                            ${currentPost.images.map((img, index) => `
+                                <img src="${img.url}" alt="${img.originalName || '이미지'}"
+                                     class="gallery-image" onclick="openImageModal('${img.url}')">
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 첨부파일 목록 렌더링
+            let filesHTML = '';
+            if (currentPost.files && currentPost.files.length > 0) {
+                filesHTML = `
+                    <div class="attachments-section">
+                        <div class="attachments-title">📎 첨부 파일 (${currentPost.files.length})</div>
+                        <div class="files-list">
+                            ${currentPost.files.map(file => {
+                                const sizeInKB = (file.size / 1024).toFixed(1);
+                                const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
+                                return `
+                                    <div class="file-item-display">
+                                        <div class="file-icon-display">📄</div>
+                                        <div class="file-info-display">
+                                            <div class="file-name-display">${file.originalName}</div>
+                                            <div class="file-size-display">${sizeText}</div>
+                                        </div>
+                                        <a href="${file.url}" download="${file.originalName}" class="file-download">다운로드</a>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 수정/삭제 버튼 (작성자 본인 또는 관리자만)
+            let editDeleteButtons = '';
+            if (currentUser && (currentUser.id === currentPost.authorId || currentUser.role === 'admin')) {
+                editDeleteButtons = `
+                    <button class="action-btn edit-btn" onclick="editPost()">✏️ 수정</button>
+                    <button class="action-btn delete-btn" onclick="deletePost()">🗑️ 삭제</button>
+                `;
+            }
 
             container.innerHTML = `
                 <div class="post-header">
@@ -639,11 +859,14 @@
                     </div>
                 </div>
                 <div class="post-content">${currentPost.content}</div>
+                ${imagesHTML}
+                ${filesHTML}
                 <div class="post-actions">
                     <button class="action-btn like-btn ${likeClass}" onclick="togglePostLike()">
                         <span id="postLikeIcon">${likeText}</span>
                         <span>좋아요 <span id="postLikeCount">${currentPost.likes}</span></span>
                     </button>
+                    ${editDeleteButtons}
                     <button class="action-btn list-btn" onclick="goToList()">목록으로</button>
                 </div>
             `;
@@ -1037,6 +1260,70 @@
         function showError(message) {
             const container = document.getElementById('postContainer');
             container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // 이미지 모달 열기
+        function openImageModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl;
+            modal.classList.add('active');
+            // body 스크롤 방지
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 이미지 모달 닫기
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+
+        // 게시글 수정
+        function editPost() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            // 수정 페이지로 이동 (게시글 ID 전달)
+            window.location.href = `/edit-post?id=${postId}`;
+        }
+
+        // 게시글 삭제
+        async function deletePost() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?\n댓글도 함께 삭제됩니다.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('게시글이 삭제되었습니다.');
+                    window.location.href = '/';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('게시글 삭제 실패:', error);
+                alert('게시글 삭제에 실패했습니다: ' + error.message);
+            }
         }
     </script>
 </body>
