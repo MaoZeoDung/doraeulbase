@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 - 도래울베이스</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 12px;
+            padding: 50px 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            font-size: 26px;
+            color: #212529;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .logo p {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #212529;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: #6c757d;
+            margin-top: 6px;
+        }
+
+        /* 프로필 사진 섹션 */
+        .profile-section {
+            margin-bottom: 28px;
+        }
+
+        .profile-section > label {
+            display: block;
+            margin-bottom: 16px;
+            color: #212529;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .profile-upload-area {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            border: 3px dashed #dee2e6;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .profile-upload-area:hover {
+            border-color: #4a90e2;
+            background: #f0f7ff;
+        }
+
+        .profile-upload-area.has-image {
+            border-style: solid;
+            border-color: #4a90e2;
+        }
+
+        .profile-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .profile-preview.show {
+            display: block;
+        }
+
+        .profile-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            color: #adb5bd;
+        }
+
+        .profile-placeholder.hide {
+            display: none;
+        }
+
+        .profile-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .profile-placeholder-text {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .profile-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .edit-btn {
+            padding: 8px 16px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: none;
+        }
+
+        .edit-btn.show {
+            display: inline-block;
+        }
+
+        .edit-btn:hover {
+            background: #357abd;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #212529;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 32px;
+        }
+
+        .submit-btn:hover {
+            background: #000;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #f8d7da;
+            border-radius: 6px;
+            display: none;
+            border-left: 3px solid #dc3545;
+        }
+
+        /* 크롭 모달 */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crop-modal.show {
+            display: flex;
+        }
+
+        .crop-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+
+        .crop-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .crop-header h2 {
+            font-size: 20px;
+            color: #212529;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .crop-header p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .crop-image-container {
+            max-width: 500px;
+            max-height: 500px;
+            margin: 0 auto 24px;
+        }
+
+        .crop-image-container img {
+            max-width: 100%;
+            display: block;
+        }
+
+        .crop-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .crop-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .crop-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .crop-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .crop-cancel,
+        .crop-apply {
+            flex: 1;
+            max-width: 180px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .crop-cancel {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+
+        .crop-cancel:hover {
+            background: #e9ecef;
+        }
+
+        .crop-apply {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .crop-apply:hover {
+            background: #357abd;
+        }
+
+        @media (max-width: 768px) {
+            .register-container {
+                padding: 35px 25px;
+            }
+
+            .crop-container {
+                padding: 20px;
+            }
+
+            .crop-image-container {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <h1>🎓 회원가입</h1>
+            <p>도래울베이스에 오신 것을 환영합니다</p>
+        </div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="name">이름 *</label>
+                <input type="text" id="name" name="name" placeholder="이름을 입력하세요" required>
+                <div class="help-text">카카오톡에 설정된 이름이 자동으로 입력됩니다</div>
+            </div>
+
+            <div class="form-group">
+                <label for="grade">학년 *</label>
+                <select id="grade" name="grade" required>
+                    <option value="">학년을 선택하세요</option>
+                    <option value="1">1학년</option>
+                    <option value="2">2학년</option>
+                    <option value="3">3학년</option>
+                    <option value="4">4학년</option>
+                    <option value="5">5학년</option>
+                    <option value="6">6학년</option>
+                </select>
+            </div>
+
+            <div class="profile-section">
+                <label>프로필 사진</label>
+                <div class="profile-upload-area" id="uploadArea" onclick="document.getElementById('profileImage').click()">
+                    <img id="profilePreview" class="profile-preview" src="" alt="프로필">
+                    <div class="profile-placeholder" id="placeholder">
+                        <div class="profile-placeholder-icon">📷</div>
+                        <div class="profile-placeholder-text">클릭하여<br>사진 선택</div>
+                    </div>
+                    <input type="file" id="profileImage" accept=".jpg,.jpeg,.png,.gif,.webp">
+                </div>
+                <div class="profile-actions">
+                    <button type="button" class="edit-btn" id="editBtn" onclick="openCropModal(event)">편집하기</button>
+                </div>
+                <div class="help-text" style="text-align: center;">jpg, jpeg, png, gif, webp (최대 5MB)</div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">가입 완료</button>
+        </form>
+    </div>
+
+    <!-- 크롭 모달 -->
+    <div class="crop-modal" id="cropModal">
+        <div class="crop-container">
+            <div class="crop-header">
+                <h2>프로필 사진 편집</h2>
+                <p>드래그하여 영역을 선택하고 확대/축소하세요</p>
+            </div>
+
+            <div class="crop-image-container">
+                <img id="cropImage" src="" alt="Crop">
+            </div>
+
+            <div class="crop-controls">
+                <button type="button" class="crop-btn" onclick="cropZoom(0.1)">🔍 확대</button>
+                <button type="button" class="crop-btn" onclick="cropZoom(-0.1)">🔍 축소</button>
+                <button type="button" class="crop-btn" onclick="cropRotate(-90)">↺ 왼쪽 회전</button>
+                <button type="button" class="crop-btn" onclick="cropRotate(90)">↻ 오른쪽 회전</button>
+                <button type="button" class="crop-btn" onclick="cropReset()">🔄 초기화</button>
+            </div>
+
+            <div class="crop-actions">
+                <button type="button" class="crop-cancel" onclick="closeCropModal()">취소</button>
+                <button type="button" class="crop-apply" onclick="applyCrop()">적용하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script>
+        let cropper = null;
+        let currentImageFile = null;
+        let croppedBlob = null;
+
+        // 카카오 이름 자동 입력 및 프로필 사진 미리보기
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/api/temp-user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    document.getElementById('name').value = data.user.kakaoName || '';
+                    if (data.user.kakaoProfileImage) {
+                        const preview = document.getElementById('profilePreview');
+                        const placeholder = document.getElementById('placeholder');
+                        const uploadArea = document.getElementById('uploadArea');
+                        
+                        preview.src = data.user.kakaoProfileImage;
+                        preview.classList.add('show');
+                        placeholder.classList.add('hide');
+                        uploadArea.classList.add('has-image');
+                        document.getElementById('editBtn').classList.add('show');
+                    }
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        });
+
+        // 드래그 앤 드롭 지원
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4a90e2';
+            uploadArea.style.background = '#f0f7ff';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (!uploadArea.classList.contains('has-image')) {
+                uploadArea.style.borderColor = '#dee2e6';
+                uploadArea.style.background = '#f8f9fa';
+            }
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('profileImage');
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // 프로필 사진 선택
+        document.getElementById('profileImage').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                if (!allowedExts.includes(ext)) {
+                    showError('허용되지 않는 파일 형식입니다. (jpg, jpeg, png, gif, webp만 가능)');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('파일 크기는 5MB를 초과할 수 없습니다.');
+                    e.target.value = '';
+                    return;
+                }
+
+                currentImageFile = file;
+                
+                // 미리보기 표시
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('profilePreview');
+                    const placeholder = document.getElementById('placeholder');
+                    const uploadArea = document.getElementById('uploadArea');
+                    
+                    preview.src = e.target.result;
+                    preview.classList.add('show');
+                    placeholder.classList.add('hide');
+                    uploadArea.classList.add('has-image');
+                    document.getElementById('editBtn').classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 크롭 모달 열기
+        function openCropModal(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!currentImageFile) {
+                showError('먼저 사진을 선택해주세요.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const cropImage = document.getElementById('cropImage');
+                cropImage.src = e.target.result;
+                
+                document.getElementById('cropModal').classList.add('show');
+                
+                // Cropper 초기화
+                if (cropper) {
+                    cropper.destroy();
+                }
+                
+                cropper = new Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(currentImageFile);
+        }
+
+        // 크롭 모달 닫기
+        function closeCropModal() {
+            document.getElementById('cropModal').classList.remove('show');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        // 크롭 확대/축소
+        function cropZoom(ratio) {
+            if (cropper) {
+                cropper.zoom(ratio);
+            }
+        }
+
+        // 크롭 회전
+        function cropRotate(degree) {
+            if (cropper) {
+                cropper.rotate(degree);
+            }
+        }
+
+        // 크롭 초기화
+        function cropReset() {
+            if (cropper) {
+                cropper.reset();
+            }
+        }
+
+        // 크롭 적용
+        function applyCrop() {
+            if (!cropper) return;
+
+            cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            }).toBlob((blob) => {
+                croppedBlob = blob;
+                
+                // 미리보기 업데이트
+                const url = URL.createObjectURL(blob);
+                document.getElementById('profilePreview').src = url;
+                
+                closeCropModal();
+            }, 'image/jpeg', 0.95);
+        }
+
+        // 회원가입 제출
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const grade = document.getElementById('grade').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!name || !grade) {
+                showError('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '처리 중...';
+
+            try {
+                // 1. 회원가입
+                const registerResponse = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, grade })
+                });
+
+                const registerData = await registerResponse.json();
+
+                if (!registerData.success) {
+                    throw new Error(registerData.message);
+                }
+
+                // 2. 프로필 사진 업로드 (크롭된 이미지 또는 원본)
+                if (croppedBlob || currentImageFile) {
+                    const formData = new FormData();
+                    const uploadBlob = croppedBlob || currentImageFile;
+                    formData.append('profileImage', uploadBlob, 'profile.jpg');
+
+                    await fetch('/api/upload-profile', {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                // 3. 메인 페이지로 이동
+                alert('가입이 완료되었습니다!');
+                window.location.href = '/';
+
+            } catch (error) {
+                showError(error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = '가입 완료';
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

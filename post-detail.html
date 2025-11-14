@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 보기 - 도래울베이스</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .post-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .post-header {
+            padding: 30px 40px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .post-category {
+            display: inline-block;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .post-category.notice {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        .post-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .author-info:hover {
+            opacity: 0.7;
+        }
+
+        .author-profile {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .author-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .author-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .admin-badge {
+            color: #FFD700;
+            font-weight: 700;
+            margin-right: 3px;
+        }
+
+        .author-grade {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 15px;
+            margin-left: auto;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .post-content {
+            padding: 40px;
+            min-height: 300px;
+            line-height: 1.8;
+            color: #333;
+            font-size: 16px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .post-actions {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .like-btn {
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+        }
+
+        .like-btn:hover {
+            border-color: #ff4757;
+            color: #ff4757;
+        }
+
+        .like-btn.liked {
+            background: #ff4757;
+            color: white;
+            border-color: #ff4757;
+        }
+
+        .list-btn {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .list-btn:hover {
+            background: #357abd;
+        }
+
+        /* 댓글 섹션 */
+        .comments-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px 40px;
+        }
+
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .comments-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .comments-count {
+            color: #4a90e2;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sort-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .sort-btn.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        .comment-write {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .comment-input {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            margin-bottom: 10px;
+        }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .comment-submit {
+            padding: 10px 20px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .comment-submit:hover {
+            background: #357abd;
+        }
+
+        .comment-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 댓글 아이템 */
+        .comment-item {
+            position: relative;
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comment-item.reply {
+            margin-left: 50px;
+            padding-left: 20px;
+        }
+
+        .comment-item.reply::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #4a90e2, #e0e0e0);
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .comment-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .comment-author:hover {
+            opacity: 0.7;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .comment-author-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .comment-admin-badge {
+            color: #FFD700;
+            font-weight: 700;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+
+        .comment-grade {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: #999;
+            margin-left: auto;
+        }
+
+        .comment-content {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .comment-action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .comment-action-btn:hover {
+            color: #4a90e2;
+        }
+
+        .comment-action-btn.liked {
+            color: #ff4757;
+            font-weight: 600;
+        }
+
+        .comment-action-btn.delete {
+            color: #f44336;
+        }
+
+        /* 대댓글 작성 */
+        .reply-write {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .reply-write.show {
+            display: block;
+        }
+
+        .reply-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            margin-bottom: 8px;
+        }
+
+        .reply-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .reply-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .reply-submit, .reply-cancel {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reply-submit {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .reply-submit:hover {
+            background: #357abd;
+        }
+
+        .reply-cancel {
+            background: white;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+
+        .reply-cancel:hover {
+            background: #f5f5f5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f44336;
+        }
+
+        .no-comments {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .post-header,
+            .post-content,
+            .post-actions,
+            .comments-container {
+                padding: 20px;
+            }
+
+            .post-title {
+                font-size: 22px;
+            }
+
+            .post-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .post-stats {
+                margin-left: 0;
+            }
+
+            .action-btn {
+                flex: 1;
+            }
+
+            .comment-item.reply {
+                margin-left: 30px;
+                padding-left: 15px;
+            }
+
+            .comments-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 게시글 -->
+        <div class="post-container">
+            <div id="postContainer">
+                <div class="loading">게시글을 불러오는 중...</div>
+            </div>
+        </div>
+
+        <!-- 댓글 -->
+        <div class="comments-container">
+            <div class="comments-header">
+                <div class="comments-title">
+                    댓글 <span class="comments-count" id="commentsCount">0</span>
+                </div>
+                <div class="sort-buttons">
+                    <button class="sort-btn active" data-sort="latest" onclick="changeSort('latest')">최신순</button>
+                    <button class="sort-btn" data-sort="oldest" onclick="changeSort('oldest')">오래된순</button>
+                    <button class="sort-btn" data-sort="likes" onclick="changeSort('likes')">좋아요순</button>
+                </div>
+            </div>
+
+            <!-- 댓글 작성 -->
+            <div class="comment-write" id="commentWrite">
+                <textarea class="comment-input" id="commentInput" placeholder="댓글을 입력하세요..."></textarea>
+                <button class="comment-submit" onclick="submitComment()">댓글 작성</button>
+            </div>
+
+            <!-- 댓글 목록 -->
+            <div id="commentsList">
+                <div class="loading">댓글을 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPost = null;
+        let currentUser = null;
+        let allComments = [];
+        let likeStatus = { posts: {}, comments: {} };
+        let currentSort = 'latest';
+        let postId = null;
+
+        // 페이지 로드 시 실행
+        window.addEventListener('load', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            postId = urlParams.get('id');
+
+            if (!postId) {
+                showError('잘못된 접근입니다.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                return;
+            }
+
+            await checkLogin();
+            await loadPost(postId);
+            await loadComments(postId);
+            await loadLikeStatus();
+        });
+
+        // 로그인 확인
+        async function checkLogin() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    currentUser = data.user;
+                    document.getElementById('commentWrite').style.display = 'block';
+                } else {
+                    document.getElementById('commentWrite').innerHTML = `
+                        <p style="text-align: center; color: #666; padding: 20px;">
+                            댓글을 작성하려면 <a href="/auth/kakao" style="color: #4a90e2; text-decoration: underline;">로그인</a>이 필요합니다.
+                        </p>
+                    `;
+                }
+            } catch (error) {
+                console.error('로그인 확인 실패:', error);
+            }
+        }
+
+        // 게시글 로드
+        async function loadPost(postId) {
+            try {
+                const response = await fetch(`/api/posts/${postId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    currentPost = data.post;
+                    renderPost();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('게시글 로드 실패:', error);
+                showError('게시글을 불러올 수 없습니다.');
+            }
+        }
+
+        // 게시글 렌더링
+        function renderPost() {
+            const container = document.getElementById('postContainer');
+            
+            const categoryClass = currentPost.category === 'notice' ? 'notice' : '';
+            const adminBadge = currentPost.authorInfo?.role === 'admin' ? '<span class="admin-badge">[관리자]</span>' : '';
+            const authorName = currentPost.authorInfo ? currentPost.authorInfo.name : currentPost.author;
+            const authorGrade = currentPost.authorInfo ? `${currentPost.authorInfo.grade}학년` : '';
+            const profileImage = currentPost.authorInfo?.profileImage || 'https://via.placeholder.com/40';
+            const authorId = currentPost.authorId || 0;
+
+            const isLiked = likeStatus.posts[currentPost.id] || false;
+            const likeClass = isLiked ? 'liked' : '';
+            const likeText = isLiked ? '❤️' : '🤍';
+
+            container.innerHTML = `
+                <div class="post-header">
+                    <div class="post-category ${categoryClass}">${currentPost.categoryName}</div>
+                    <h1 class="post-title">${currentPost.title}</h1>
+                    <div class="post-meta">
+                        <div class="author-info" onclick="goToProfile(${authorId})">
+                            <img src="${profileImage}" alt="프로필" class="author-profile">
+                            <div class="author-details">
+                                <div class="author-name">${adminBadge}${authorName}</div>
+                                <div class="author-grade">${authorGrade}</div>
+                            </div>
+                        </div>
+                        <div class="post-stats">
+                            <span>📅 ${currentPost.date} ${currentPost.time}</span>
+                            <span>👁️ ${currentPost.views}</span>
+                            <span>❤️ ${currentPost.likes}</span>
+                            <span>💬 ${currentPost.comments}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-content">${currentPost.content}</div>
+                <div class="post-actions">
+                    <button class="action-btn like-btn ${likeClass}" onclick="togglePostLike()">
+                        <span id="postLikeIcon">${likeText}</span>
+                        <span>좋아요 <span id="postLikeCount">${currentPost.likes}</span></span>
+                    </button>
+                    <button class="action-btn list-btn" onclick="goToList()">목록으로</button>
+                </div>
+            `;
+        }
+
+        // 댓글 로드
+        async function loadComments(postId) {
+            try {
+                const response = await fetch(`/api/comments/${postId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    allComments = data.comments;
+                    renderComments();
+                }
+            } catch (error) {
+                console.error('댓글 로드 실패:', error);
+                document.getElementById('commentsList').innerHTML = `
+                    <div class="error">댓글을 불러올 수 없습니다.</div>
+                `;
+            }
+        }
+
+        // 좋아요 상태 로드
+        async function loadLikeStatus() {
+            try {
+                const response = await fetch('/api/like/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    likeStatus = {
+                        posts: data.posts || {},
+                        comments: data.comments || {}
+                    };
+                    
+                    // 게시글 좋아요 버튼 업데이트
+                    if (currentPost) {
+                        updatePostLikeButton();
+                    }
+                    
+                    // 댓글 좋아요 버튼 업데이트
+                    renderComments();
+                }
+            } catch (error) {
+                console.error('좋아요 상태 로드 실패:', error);
+            }
+        }
+
+        // 댓글 렌더링
+        function renderComments() {
+            const container = document.getElementById('commentsList');
+            document.getElementById('commentsCount').textContent = allComments.length;
+
+            if (allComments.length === 0) {
+                container.innerHTML = `
+                    <div class="no-comments">
+                        아직 댓글이 없습니다.<br>첫 번째 댓글을 작성해보세요!
+                    </div>
+                `;
+                return;
+            }
+
+            // 정렬
+            let sortedComments = [...allComments];
+            
+            switch(currentSort) {
+                case 'latest':
+                    sortedComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    break;
+                case 'oldest':
+                    sortedComments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    break;
+                case 'likes':
+                    sortedComments.sort((a, b) => b.likes - a.likes);
+                    break;
+            }
+
+            // 최상위 댓글만 먼저 렌더링
+            const parentComments = sortedComments.filter(c => !c.parentId);
+            
+            let html = '';
+            parentComments.forEach(comment => {
+                html += renderCommentWithReplies(comment, sortedComments, 0);
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 댓글과 모든 대댓글을 재귀적으로 렌더링
+        function renderCommentWithReplies(comment, allComments, depth) {
+            let html = renderComment(comment, depth > 0);
+            
+            // 이 댓글의 대댓글 찾기
+            const replies = allComments.filter(c => c.parentId === comment.id);
+            
+            // 대댓글도 재귀적으로 렌더링
+            replies.forEach(reply => {
+                html += renderCommentWithReplies(reply, allComments, depth + 1);
+            });
+            
+            return html;
+        }
+
+        // 개별 댓글 렌더링
+        function renderComment(comment, isReply = false) {
+            const adminBadge = comment.authorInfo?.role === 'admin' ? '<span class="comment-admin-badge">[관리자]</span>' : '';
+            const authorName = comment.authorInfo?.name || comment.author;
+            const authorGrade = comment.authorInfo?.grade ? `${comment.authorInfo.grade}학년` : '';
+            const profileImage = comment.authorInfo?.profileImage || 'https://via.placeholder.com/32';
+            const authorId = comment.authorId || 0;
+
+            const timeAgo = getTimeAgo(comment.createdAt);
+
+            const isLiked = likeStatus.comments[comment.id] || false;
+            const likeClass = isLiked ? 'liked' : '';
+            const likeIcon = isLiked ? '❤️' : '🤍';
+
+            const canDelete = currentUser && (currentUser.id === comment.authorId || currentUser.role === 'admin');
+            const deleteBtn = canDelete ? `<button class="comment-action-btn delete" onclick="deleteComment(${comment.id})">🗑️ 삭제</button>` : '';
+
+            const replyBtn = currentUser ? `<button class="comment-action-btn" onclick="toggleReplyBox(${comment.id})">💬 답글</button>` : '';
+
+            const replyClass = isReply ? 'reply' : '';
+
+            return `
+                <div class="comment-item ${replyClass}">
+                    <div class="comment-header">
+                        <div class="comment-author" onclick="goToProfile(${authorId})">
+                            <img src="${profileImage}" alt="프로필" class="comment-avatar">
+                            <span class="comment-author-name">${adminBadge}${authorName}</span>
+                            <span class="comment-grade">${authorGrade}</span>
+                        </div>
+                        <span class="comment-time">${timeAgo}</span>
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-actions">
+                        <button class="comment-action-btn ${likeClass}" onclick="toggleCommentLike(${comment.id})">
+                            ${likeIcon} ${comment.likes}
+                        </button>
+                        ${replyBtn}
+                        ${deleteBtn}
+                    </div>
+                    <div class="reply-write" id="replyBox${comment.id}">
+                        <textarea class="reply-input" id="replyInput${comment.id}" placeholder="답글을 입력하세요..."></textarea>
+                        <div class="reply-buttons">
+                            <button class="reply-submit" onclick="submitReply(${comment.id})">답글 작성</button>
+                            <button class="reply-cancel" onclick="toggleReplyBox(${comment.id})">취소</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 시간 경과 표시
+        function getTimeAgo(dateString) {
+            const now = new Date();
+            const past = new Date(dateString);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return '방금 전';
+            if (diffMins < 60) return `${diffMins}분 전`;
+            if (diffHours < 24) return `${diffHours}시간 전`;
+            if (diffDays < 7) return `${diffDays}일 전`;
+            
+            return past.toLocaleDateString('ko-KR');
+        }
+
+        // 정렬 변경
+        function changeSort(sort) {
+            currentSort = sort;
+            
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-sort="${sort}"]`).classList.add('active');
+            
+            renderComments();
+        }
+
+        // 댓글 작성
+        async function submitComment() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/auth/kakao';
+                return;
+            }
+
+            const content = document.getElementById('commentInput').value.trim();
+            
+            if (!content) {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        postId: postId,
+                        content: content
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('commentInput').value = '';
+                    allComments.push(data.comment);
+                    currentPost.comments++;
+                    renderComments();
+                    renderPost();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('댓글 작성 실패:', error);
+                alert('댓글 작성에 실패했습니다.');
+            }
+        }
+
+        // 답글 박스 토글
+        function toggleReplyBox(commentId) {
+            const replyBox = document.getElementById(`replyBox${commentId}`);
+            replyBox.classList.toggle('show');
+            
+            if (replyBox.classList.contains('show')) {
+                document.getElementById(`replyInput${commentId}`).focus();
+            }
+        }
+
+        // 답글 작성
+        async function submitReply(parentId) {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const content = document.getElementById(`replyInput${parentId}`).value.trim();
+            
+            if (!content) {
+                alert('답글 내용을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        postId: postId,
+                        content: content,
+                        parentId: parentId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById(`replyInput${parentId}`).value = '';
+                    toggleReplyBox(parentId);
+                    allComments.push(data.comment);
+                    currentPost.comments++;
+                    renderComments();
+                    renderPost();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('답글 작성 실패:', error);
+                alert('답글 작성에 실패했습니다.');
+            }
+        }
+
+        // 댓글 삭제
+        async function deleteComment(commentId) {
+            if (!confirm('댓글을 삭제하시겠습니까?\n(대댓글도 함께 삭제됩니다)')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/comments/${commentId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await loadComments(postId);
+                    await loadPost(postId);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('댓글 삭제 실패:', error);
+                alert('댓글 삭제에 실패했습니다.');
+            }
+        }
+
+        // 게시글 좋아요 토글
+        async function togglePostLike() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/auth/kakao';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/like/post/${postId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    likeStatus.posts[postId] = data.liked;
+                    currentPost.likes = data.likes;
+                    updatePostLikeButton();
+                }
+            } catch (error) {
+                console.error('좋아요 실패:', error);
+                alert('좋아요에 실패했습니다.');
+            }
+        }
+
+        // 게시글 좋아요 버튼 업데이트
+        function updatePostLikeButton() {
+            const isLiked = likeStatus.posts[postId] || false;
+            const likeBtn = document.querySelector('.like-btn');
+            const likeIcon = document.getElementById('postLikeIcon');
+            const likeCount = document.getElementById('postLikeCount');
+            
+            if (likeBtn) {
+                if (isLiked) {
+                    likeBtn.classList.add('liked');
+                    likeIcon.textContent = '❤️';
+                } else {
+                    likeBtn.classList.remove('liked');
+                    likeIcon.textContent = '🤍';
+                }
+                likeCount.textContent = currentPost.likes;
+            }
+        }
+
+        // 댓글 좋아요 토글
+        async function toggleCommentLike(commentId) {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/auth/kakao';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/like/comment/${commentId}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    likeStatus.comments[commentId] = data.liked;
+                    
+                    const comment = allComments.find(c => c.id === commentId);
+                    if (comment) {
+                        comment.likes = data.likes;
+                    }
+                    
+                    renderComments();
+                }
+            } catch (error) {
+                console.error('좋아요 실패:', error);
+                alert('좋아요에 실패했습니다.');
+            }
+        }
+
+        // 프로필로 이동
+        function goToProfile(userId) {
+            if (userId) {
+                window.location.href = `/profile?id=${userId}`;
+            }
+        }
+
+        // 목록으로 이동
+        function goToList() {
+            window.location.href = '/';
+        }
+
+        function showError(message) {
+            const container = document.getElementById('postContainer');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

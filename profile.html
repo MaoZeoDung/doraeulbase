@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로필 - 도래울베이스</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #f0f0f0;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .admin-badge {
+            color: #FFD700;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+
+        .profile-grade {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .profile-date {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4a90e2;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .posts-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .posts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .posts-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sort-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .sort-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .sort-btn.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+        .post-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .post-item:hover {
+            background: #f8f9fa;
+            margin: 0 -10px;
+            padding: 20px 10px;
+            border-radius: 8px;
+        }
+
+        .post-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .post-category {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #4a90e2;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .post-category.notice {
+            background: #f44336;
+        }
+
+        .post-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .post-content-preview {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #999;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #f44336;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        /* 설정 버튼 */
+        .settings-btn {
+            padding: 10px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: #1565c0;
+        }
+
+        /* 설정 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .modal-btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .modal-btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .profile-image-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #f0f0f0;
+            margin: 15px auto;
+            display: block;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .file-input-label:hover {
+            background: #e0e0e0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .profile-card,
+            .posts-section {
+                padding: 20px;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+
+            .profile-name {
+                font-size: 24px;
+            }
+
+            .profile-stats {
+                justify-content: center;
+                gap: 20px;
+            }
+
+            .posts-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .sort-buttons {
+                width: 100%;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-btn" onclick="goBack()">← 돌아가기</button>
+
+        <!-- 프로필 카드 -->
+        <div class="profile-card">
+            <div id="profileContainer">
+                <div class="loading">프로필을 불러오는 중...</div>
+            </div>
+        </div>
+
+        <!-- 작성 글 목록 -->
+        <div class="posts-section">
+            <div class="posts-header">
+                <div class="posts-title">작성한 글 <span id="postsCount">0</span></div>
+                <div class="sort-buttons">
+                    <button class="sort-btn active" data-sort="latest" onclick="changeSort('latest')">최신순</button>
+                    <button class="sort-btn" data-sort="oldest" onclick="changeSort('oldest')">오래된순</button>
+                    <button class="sort-btn" data-sort="views" onclick="changeSort('views')">조회수순</button>
+                    <button class="sort-btn" data-sort="likes" onclick="changeSort('likes')">좋아요순</button>
+                </div>
+            </div>
+            <div id="postsList">
+                <div class="loading">게시글을 불러오는 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div class="modal-overlay" id="settingsModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">⚙️ 설정</div>
+            
+            <!-- 프로필 사진 변경 -->
+            <div class="modal-section">
+                <div class="modal-section-title">프로필 사진 변경</div>
+                <img id="profilePreview" class="profile-image-preview" src="" alt="프로필 미리보기">
+                <label class="file-input-label">
+                    <input type="file" id="profileImageInput" accept="image/*" onchange="previewProfileImage(event)">
+                    📷 사진 선택
+                </label>
+                <button class="modal-btn modal-btn-primary" style="margin-left: 10px;" onclick="updateProfileImage()">사진 업데이트</button>
+            </div>
+
+            <!-- 이름 변경 -->
+            <div class="modal-section">
+                <div class="modal-section-title">이름 변경</div>
+                <input type="text" class="modal-input" id="nameInput" placeholder="새 이름 입력">
+                <button class="modal-btn modal-btn-primary" style="margin-top: 10px;" onclick="updateName()">이름 변경</button>
+            </div>
+
+            <!-- 회원 탈퇴 -->
+            <div class="modal-section">
+                <div class="modal-section-title">회원 탈퇴</div>
+                <p style="color: #f44336; font-size: 13px; margin-bottom: 10px;">⚠️ 회원 탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.</p>
+                <button class="modal-btn modal-btn-danger" onclick="deleteAccount()">회원 탈퇴</button>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="closeSettingsModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userProfile = null;
+        let userPosts = [];
+        let currentSort = 'latest';
+
+        // 페이지 로드
+        window.addEventListener('load', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('id');
+
+            if (!userId) {
+                showError('잘못된 접근입니다.');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                return;
+            }
+
+            await loadProfile(userId);
+        });
+
+        // 프로필 로드
+        async function loadProfile(userId) {
+            try {
+                const response = await fetch(`/api/profile/${userId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    userProfile = data.user;
+                    userPosts = data.posts;
+                    renderProfile();
+                    renderPosts();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('프로필 로드 실패:', error);
+                showError('프로필을 불러올 수 없습니다.');
+            }
+        }
+
+        // 프로필 렌더링
+        async function renderProfile() {
+            const container = document.getElementById('profileContainer');
+            
+            const adminBadge = userProfile.role === 'admin' ? '<span class="admin-badge">[관리자]</span>' : '';
+            const profileImage = userProfile.profileImage || 'https://via.placeholder.com/120';
+            const joinDate = new Date(userProfile.createdAt).toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // 통계 계산
+            const totalViews = userPosts.reduce((sum, post) => sum + post.views, 0);
+            const totalLikes = userPosts.reduce((sum, post) => sum + post.likes, 0);
+            const totalComments = userPosts.reduce((sum, post) => sum + post.comments, 0);
+
+            // 현재 로그인한 사용자 확인
+            let currentUser = null;
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (data.success && data.user) {
+                    currentUser = data.user;
+                }
+            } catch (error) {
+                console.error('사용자 정보 확인 실패:', error);
+            }
+
+            const isOwnProfile = currentUser && currentUser.id === userProfile.id;
+            const settingsButton = isOwnProfile ? '<button class="settings-btn" onclick="openSettingsModal()">⚙️ 설정</button>' : '';
+
+            container.innerHTML = `
+                <div class="profile-header">
+                    <img src="${profileImage}" alt="프로필" class="profile-image">
+                    <div class="profile-info">
+                        <div class="profile-name">${adminBadge}${userProfile.name}</div>
+                        <div class="profile-grade">${userProfile.grade}학년</div>
+                        <div class="profile-date">가입일: ${joinDate}</div>
+                    </div>
+                    ${settingsButton}
+                </div>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">${userPosts.length}</div>
+                        <div class="stat-label">작성 글</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${totalViews}</div>
+                        <div class="stat-label">총 조회수</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${totalLikes}</div>
+                        <div class="stat-label">총 좋아요</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${totalComments}</div>
+                        <div class="stat-label">총 댓글</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 게시글 렌더링
+        function renderPosts() {
+            const container = document.getElementById('postsList');
+            document.getElementById('postsCount').textContent = userPosts.length;
+
+            if (userPosts.length === 0) {
+                container.innerHTML = `
+                    <div class="no-posts">
+                        작성한 글이 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            // 정렬
+            let sortedPosts = [...userPosts];
+            
+            switch(currentSort) {
+                case 'latest':
+                    sortedPosts.sort((a, b) => b.id - a.id);
+                    break;
+                case 'oldest':
+                    sortedPosts.sort((a, b) => a.id - b.id);
+                    break;
+                case 'views':
+                    sortedPosts.sort((a, b) => b.views - a.views);
+                    break;
+                case 'likes':
+                    sortedPosts.sort((a, b) => b.likes - a.likes);
+                    break;
+            }
+
+            let html = '';
+            sortedPosts.forEach(post => {
+                const categoryClass = post.category === 'notice' ? 'notice' : '';
+                const contentPreview = post.content.substring(0, 100);
+
+                html += `
+                    <div class="post-item" onclick="goToPost(${post.id})">
+                        <div class="post-item-header">
+                            <span class="post-category ${categoryClass}">${post.categoryName}</span>
+                            <span style="font-size: 12px; color: #999;">${post.date}</span>
+                        </div>
+                        <div class="post-title">${post.title}</div>
+                        <div class="post-content-preview">${contentPreview}...</div>
+                        <div class="post-meta">
+                            <span>👁️ ${post.views}</span>
+                            <span>❤️ ${post.likes}</span>
+                            <span>💬 ${post.comments}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 정렬 변경
+        function changeSort(sort) {
+            currentSort = sort;
+            
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-sort="${sort}"]`).classList.add('active');
+            
+            renderPosts();
+        }
+
+        // 게시글로 이동
+        function goToPost(postId) {
+            window.location.href = `/post-detail?id=${postId}`;
+        }
+
+        // 뒤로 가기
+        function goBack() {
+            window.history.back();
+        }
+
+        function showError(message) {
+            const container = document.getElementById('profileContainer');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // === 설정 모달 관련 함수 ===
+        
+        // 설정 모달 열기
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            const profilePreview = document.getElementById('profilePreview');
+            const nameInput = document.getElementById('nameInput');
+            
+            // 현재 프로필 정보로 초기화
+            profilePreview.src = userProfile.profileImage || 'https://via.placeholder.com/120';
+            nameInput.value = userProfile.name;
+            
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 설정 모달 닫기
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 모달 오버레이 클릭 시 닫기
+        function closeModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeSettingsModal();
+            }
+        }
+
+        // 프로필 사진 미리보기
+        function previewProfileImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profilePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 프로필 사진 업데이트
+        async function updateProfileImage() {
+            const fileInput = document.getElementById('profileImageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('사진을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('profileImage', file);
+
+            try {
+                const response = await fetch('/api/user/profile-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('프로필 사진이 변경되었습니다.');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('프로필 사진 업데이트 실패:', error);
+                alert('프로필 사진 변경에 실패했습니다.');
+            }
+        }
+
+        // 이름 변경
+        async function updateName() {
+            const newName = document.getElementById('nameInput').value.trim();
+            
+            if (!newName) {
+                alert('이름을 입력해주세요.');
+                return;
+            }
+
+            if (newName === userProfile.name) {
+                alert('현재 이름과 동일합니다.');
+                return;
+            }
+
+            if (!confirm(`이름을 "${newName}"(으)로 변경하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user/name', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('이름이 변경되었습니다.');
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('이름 변경 실패:', error);
+                alert('이름 변경에 실패했습니다.');
+            }
+        }
+
+        // 회원 탈퇴
+        async function deleteAccount() {
+            const confirmation = prompt('정말로 탈퇴하시겠습니까?\n탈퇴를 원하시면 "탈퇴"를 입력해주세요.');
+            
+            if (confirmation !== '탈퇴') {
+                if (confirmation !== null) {
+                    alert('탈퇴가 취소되었습니다.');
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user/delete', {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('회원 탈퇴가 완료되었습니다.');
+                    window.location.href = '/';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('회원 탈퇴 실패:', error);
+                alert('회원 탈퇴에 실패했습니다.');
+            }
+        }
+    </script>
+</body>
+</html>

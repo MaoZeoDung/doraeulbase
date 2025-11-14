@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글쓰기 - 도래울베이스</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .form-group select,
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .form-group textarea {
+            min-height: 300px;
+            resize: vertical;
+        }
+
+        .captcha-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .captcha-question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .captcha-input {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            display: block;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .submit-btn,
+        .cancel-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(25, 118, 210, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .cancel-btn {
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+        }
+
+        .cancel-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .notice-warning {
+            background: #fff3e0;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✍️ 글쓰기</h1>
+            <p>커뮤니티 규칙을 준수하여 게시글을 작성해주세요.</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="notice-warning" id="noticeWarning">
+            ⚠️ 공지사항은 관리자만 작성할 수 있습니다.
+        </div>
+
+        <form id="writeForm">
+            <div class="form-group">
+                <label for="category">카테고리 *</label>
+                <select id="category" name="category" required>
+                    <option value="">카테고리를 선택하세요</option>
+                    <option value="notice">공지사항 (관리자 전용)</option>
+                    <option value="info">자료·정보 공유</option>
+                    <option value="question">질문게시판</option>
+                    <option value="free">자유게시판</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="title">제목 *</label>
+                <input type="text" id="title" name="title" placeholder="제목을 입력하세요" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label for="content">내용 *</label>
+                <textarea id="content" name="content" placeholder="내용을 입력하세요" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>캡챠 인증 *</label>
+                <div class="captcha-box">
+                    <div class="captcha-question" id="captchaQuestion">로딩 중...</div>
+                    <input type="text" class="captcha-input" id="captchaAnswer" placeholder="답을 입력하세요" required>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="cancel-btn" onclick="goBack()">취소</button>
+                <button type="submit" class="submit-btn" id="submitBtn">작성 완료</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let captchaToken = null;
+
+        // 페이지 로드 시 실행
+        window.addEventListener('load', async () => {
+            await checkLogin();
+            await loadCaptcha();
+            setupCategoryCheck();
+        });
+
+        // 로그인 확인
+        async function checkLogin() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                
+                if (!data.success || !data.user) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/auth/kakao';
+                    return;
+                }
+                
+                currentUser = data.user;
+            } catch (error) {
+                console.error('로그인 확인 실패:', error);
+                alert('로그인 상태를 확인할 수 없습니다.');
+                window.location.href = '/';
+            }
+        }
+
+        // 캡챠 로드
+        async function loadCaptcha() {
+            try {
+                const response = await fetch('/api/captcha');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('captchaQuestion').textContent = data.question;
+                }
+            } catch (error) {
+                console.error('캡챠 로드 실패:', error);
+                document.getElementById('captchaQuestion').textContent = '캡챠 로드 실패';
+            }
+        }
+
+        // 카테고리 선택 시 공지사항 경고
+        function setupCategoryCheck() {
+            const categorySelect = document.getElementById('category');
+            const noticeWarning = document.getElementById('noticeWarning');
+            
+            categorySelect.addEventListener('change', () => {
+                if (categorySelect.value === 'notice') {
+                    if (currentUser && currentUser.role === 'admin') {
+                        noticeWarning.style.display = 'none';
+                    } else {
+                        noticeWarning.style.display = 'block';
+                        noticeWarning.textContent = '⚠️ 공지사항은 관리자만 작성할 수 있습니다. 다른 카테고리를 선택해주세요.';
+                    }
+                } else {
+                    noticeWarning.style.display = 'none';
+                }
+            });
+        }
+
+        // 폼 제출
+        document.getElementById('writeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const captchaAnswer = document.getElementById('captchaAnswer').value.trim();
+
+            // 유효성 검사
+            if (!category || !title || !content || !captchaAnswer) {
+                showError('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            // 공지사항 권한 확인
+            if (category === 'notice' && currentUser.role !== 'admin') {
+                showError('공지사항은 관리자만 작성할 수 있습니다.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '작성 중...';
+
+            try {
+                // 1. 캡챠 검증
+                const captchaResponse = await fetch('/api/captcha/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer: captchaAnswer })
+                });
+
+                const captchaData = await captchaResponse.json();
+
+                if (!captchaData.success) {
+                    showError('캡챠 답이 틀렸습니다. 다시 시도해주세요.');
+                    await loadCaptcha();
+                    document.getElementById('captchaAnswer').value = '';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '작성 완료';
+                    return;
+                }
+
+                captchaToken = captchaData.token;
+
+                // 2. 게시글 작성
+                const postResponse = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category,
+                        title,
+                        content,
+                        captchaToken
+                    })
+                });
+
+                const postData = await postResponse.json();
+
+                if (postData.success) {
+                    alert('게시글이 작성되었습니다!');
+                    window.location.href = '/';
+                } else {
+                    throw new Error(postData.message);
+                }
+
+            } catch (error) {
+                console.error('게시글 작성 실패:', error);
+                showError(error.message || '게시글 작성에 실패했습니다.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '작성 완료';
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goBack() {
+            if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
+                window.location.href = '/';
+            }
+        }
+    </script>
+</body>
+</html>
