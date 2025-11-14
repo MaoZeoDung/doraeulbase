@@ -18,6 +18,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
 const COMMENTS_FILE = path.join(DATA_DIR, 'comments.json');
 const LIKES_FILE = path.join(DATA_DIR, 'likes.json');
+const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 // 디렉토리 생성
@@ -33,6 +34,7 @@ if (!fs.existsSync(POSTS_FILE)) {
 }
 if (!fs.existsSync(COMMENTS_FILE)) fs.writeFileSync(COMMENTS_FILE, '[]');
 if (!fs.existsSync(LIKES_FILE)) fs.writeFileSync(LIKES_FILE, '{"posts": {}, "comments": {}}');
+if (!fs.existsSync(REPORTS_FILE)) fs.writeFileSync(REPORTS_FILE, '[]');
 
 // 미들웨어 설정
 app.use(express.json());
@@ -113,16 +115,15 @@ function writeJSON(filepath, data) {
 
 // ============= 카카오 로그인 설정 =============
 const KAKAO_CONFIG = {
-    CLIENT_ID: process.env.KAKAO_CLIENT_ID,
+    CLIENT_ID: process.env.KAKAO_CLIENT_ID || 'NOT_SET',
     REDIRECT_URI: process.env.KAKAO_REDIRECT_URI || `http://localhost:${PORT}/auth/kakao/callback`,
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET || ''
 };
 
-// 필수 환경변수 검증
-if (!KAKAO_CONFIG.CLIENT_ID) {
-    console.error('⚠️  오류: KAKAO_CLIENT_ID 환경변수가 설정되지 않았습니다.');
-    console.error('   .env 파일에 KAKAO_CLIENT_ID를 추가해주세요.');
-    process.exit(1);
+// 환경변수 경고 (서버는 계속 실행됨)
+if (!process.env.KAKAO_CLIENT_ID || KAKAO_CONFIG.CLIENT_ID === 'NOT_SET') {
+    console.warn('⚠️  경고: KAKAO_CLIENT_ID 환경변수가 설정되지 않았습니다.');
+    console.warn('   카카오 로그인 기능이 작동하지 않을 수 있습니다.');
 }
 
 // 카카오 로그인 페이지로 리다이렉트
@@ -432,6 +433,10 @@ app.get('/profile', (req, res) => {
 
 app.get('/edit-post', (req, res) => {
     res.sendFile(path.join(__dirname, 'edit-post.html'));
+});
+
+app.get('/admin-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
 });
 
 // ============= 댓글 API =============
@@ -1039,11 +1044,253 @@ app.get('/api/search', (req, res) => {
     }));
 
     const posts = readJSON(POSTS_FILE);
-    const matchedPosts = posts.filter(p => 
+    const matchedPosts = posts.filter(p =>
         p.title.toLowerCase().includes(searchTerm) || p.content.toLowerCase().includes(searchTerm)
     );
 
     res.json({ success: true, users: matchedUsers, posts: matchedPosts });
+});
+
+// ============= 댓글 수정 API =============
+
+app.put('/api/comments/:id', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+        return res.status(400).json({ success: false, message: '댓글 내용을 입력해주세요.' });
+    }
+
+    const comments = readJSON(COMMENTS_FILE);
+    const commentIndex = comments.findIndex(c => c.id === parseInt(req.params.id));
+
+    if (commentIndex === -1) {
+        return res.status(404).json({ success: false, message: '댓글을 찾을 수 없습니다.' });
+    }
+
+    const comment = comments[commentIndex];
+
+    // 작성자 본인 또는 관리자만 수정 가능
+    if (comment.authorId !== req.session.user.id && req.session.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '권한이 없습니다.' });
+    }
+
+    comments[commentIndex].content = content.trim();
+    comments[commentIndex].updatedAt = new Date().toISOString();
+    writeJSON(COMMENTS_FILE, comments);
+
+    // 작성자 정보 추가
+    const users = readJSON(USERS_FILE);
+    const author = users.find(u => u.id === comment.authorId);
+    const updatedComment = {
+        ...comments[commentIndex],
+        authorInfo: author ? {
+            name: author.name,
+            grade: author.grade,
+            role: author.role,
+            profileImage: author.profileImage
+        } : null
+    };
+
+    res.json({ success: true, comment: updatedComment });
+});
+
+// ============= 신고 API =============
+
+// 게시글 신고
+app.post('/api/report/post/:id', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+        return res.status(400).json({ success: false, message: '신고 사유를 입력해주세요.' });
+    }
+
+    const posts = readJSON(POSTS_FILE);
+    const post = posts.find(p => p.id === parseInt(req.params.id));
+
+    if (!post) {
+        return res.status(404).json({ success: false, message: '게시글을 찾을 수 없습니다.' });
+    }
+
+    const reports = readJSON(REPORTS_FILE);
+
+    // 중복 신고 방지
+    const existingReport = reports.find(r =>
+        r.type === 'post' &&
+        r.targetId === parseInt(req.params.id) &&
+        r.reporterId === req.session.user.id &&
+        r.status === 'pending'
+    );
+
+    if (existingReport) {
+        return res.status(400).json({ success: false, message: '이미 신고한 게시글입니다.' });
+    }
+
+    const newReport = {
+        id: reports.length > 0 ? Math.max(...reports.map(r => r.id)) + 1 : 1,
+        type: 'post',
+        targetId: parseInt(req.params.id),
+        targetTitle: post.title,
+        targetContent: post.content.substring(0, 100),
+        targetAuthorId: post.authorId,
+        targetAuthor: post.author,
+        reporterId: req.session.user.id,
+        reporterName: req.session.user.name,
+        reason: reason.trim(),
+        createdAt: new Date().toISOString(),
+        status: 'pending' // pending, resolved, rejected
+    };
+
+    reports.push(newReport);
+    writeJSON(REPORTS_FILE, reports);
+
+    res.json({ success: true, message: '신고가 접수되었습니다.' });
+});
+
+// 댓글 신고
+app.post('/api/report/comment/:id', (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+
+    const { reason } = req.body;
+    if (!reason || !reason.trim()) {
+        return res.status(400).json({ success: false, message: '신고 사유를 입력해주세요.' });
+    }
+
+    const comments = readJSON(COMMENTS_FILE);
+    const comment = comments.find(c => c.id === parseInt(req.params.id));
+
+    if (!comment) {
+        return res.status(404).json({ success: false, message: '댓글을 찾을 수 없습니다.' });
+    }
+
+    const reports = readJSON(REPORTS_FILE);
+
+    // 중복 신고 방지
+    const existingReport = reports.find(r =>
+        r.type === 'comment' &&
+        r.targetId === parseInt(req.params.id) &&
+        r.reporterId === req.session.user.id &&
+        r.status === 'pending'
+    );
+
+    if (existingReport) {
+        return res.status(400).json({ success: false, message: '이미 신고한 댓글입니다.' });
+    }
+
+    const newReport = {
+        id: reports.length > 0 ? Math.max(...reports.map(r => r.id)) + 1 : 1,
+        type: 'comment',
+        targetId: parseInt(req.params.id),
+        targetTitle: '댓글',
+        targetContent: comment.content.substring(0, 100),
+        targetAuthorId: comment.authorId,
+        targetAuthor: comment.author,
+        postId: comment.postId,
+        reporterId: req.session.user.id,
+        reporterName: req.session.user.name,
+        reason: reason.trim(),
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+    };
+
+    reports.push(newReport);
+    writeJSON(REPORTS_FILE, reports);
+
+    res.json({ success: true, message: '신고가 접수되었습니다.' });
+});
+
+// 신고 목록 조회 (관리자 전용)
+app.get('/api/reports', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '관리자만 접근 가능합니다.' });
+    }
+
+    const reports = readJSON(REPORTS_FILE);
+    const { status, page = 1, limit = 10 } = req.query;
+
+    let filteredReports = reports;
+    if (status) {
+        filteredReports = reports.filter(r => r.status === status);
+    }
+
+    // 최신순 정렬
+    filteredReports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // 페이지네이션
+    const startIndex = (parseInt(page) - 1) * parseInt(limit);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedReports = filteredReports.slice(startIndex, endIndex);
+
+    res.json({
+        success: true,
+        reports: paginatedReports,
+        total: filteredReports.length,
+        page: parseInt(page),
+        totalPages: Math.ceil(filteredReports.length / parseInt(limit))
+    });
+});
+
+// 신고 처리 (관리자 전용)
+app.put('/api/reports/:id', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '관리자만 접근 가능합니다.' });
+    }
+
+    const { status, adminNote } = req.body;
+    if (!['resolved', 'rejected'].includes(status)) {
+        return res.status(400).json({ success: false, message: '잘못된 상태값입니다.' });
+    }
+
+    const reports = readJSON(REPORTS_FILE);
+    const reportIndex = reports.findIndex(r => r.id === parseInt(req.params.id));
+
+    if (reportIndex === -1) {
+        return res.status(404).json({ success: false, message: '신고 내역을 찾을 수 없습니다.' });
+    }
+
+    reports[reportIndex].status = status;
+    reports[reportIndex].adminNote = adminNote || '';
+    reports[reportIndex].processedAt = new Date().toISOString();
+    reports[reportIndex].processedBy = req.session.user.name;
+
+    writeJSON(REPORTS_FILE, reports);
+
+    res.json({ success: true, report: reports[reportIndex] });
+});
+
+// 관리자 대시보드 통계
+app.get('/api/admin/stats', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '관리자만 접근 가능합니다.' });
+    }
+
+    const users = readJSON(USERS_FILE);
+    const posts = readJSON(POSTS_FILE);
+    const comments = readJSON(COMMENTS_FILE);
+    const reports = readJSON(REPORTS_FILE);
+
+    const stats = {
+        totalUsers: users.length,
+        totalPosts: posts.length,
+        totalComments: comments.length,
+        totalReports: reports.length,
+        pendingReports: reports.filter(r => r.status === 'pending').length,
+        resolvedReports: reports.filter(r => r.status === 'resolved').length,
+        rejectedReports: reports.filter(r => r.status === 'rejected').length,
+        todayPosts: posts.filter(p => p.date === new Date().toISOString().split('T')[0]).length,
+        todayComments: comments.filter(c =>
+            c.createdAt.split('T')[0] === new Date().toISOString().split('T')[0]
+        ).length
+    };
+
+    res.json({ success: true, stats });
 });
 
 // ============= 에러 핸들러 =============

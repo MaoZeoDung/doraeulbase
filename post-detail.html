@@ -829,13 +829,21 @@
                 `;
             }
 
-            // 수정/삭제 버튼 (작성자 본인 또는 관리자만)
-            let editDeleteButtons = '';
-            if (currentUser && (currentUser.id === currentPost.authorId || currentUser.role === 'admin')) {
-                editDeleteButtons = `
-                    <button class="action-btn edit-btn" onclick="editPost()">✏️ 수정</button>
-                    <button class="action-btn delete-btn" onclick="deletePost()">🗑️ 삭제</button>
-                `;
+            // 수정/삭제/신고 버튼
+            let actionButtons = '';
+            if (currentUser) {
+                if (currentUser.id === currentPost.authorId || currentUser.role === 'admin') {
+                    // 작성자 본인 또는 관리자: 수정/삭제 버튼
+                    actionButtons = `
+                        <button class="action-btn edit-btn" onclick="editPost()">✏️ 수정</button>
+                        <button class="action-btn delete-btn" onclick="deletePost()">🗑️ 삭제</button>
+                    `;
+                } else {
+                    // 다른 사용자: 신고 버튼
+                    actionButtons = `
+                        <button class="action-btn" style="background: #f44336; color: white;" onclick="reportPost()">🚨 신고</button>
+                    `;
+                }
             }
 
             container.innerHTML = `
@@ -866,7 +874,7 @@
                         <span id="postLikeIcon">${likeText}</span>
                         <span>좋아요 <span id="postLikeCount">${currentPost.likes}</span></span>
                     </button>
-                    ${editDeleteButtons}
+                    ${actionButtons}
                     <button class="action-btn list-btn" onclick="goToList()">목록으로</button>
                 </div>
             `;
@@ -984,15 +992,27 @@
             const likeClass = isLiked ? 'liked' : '';
             const likeIcon = isLiked ? '❤️' : '🤍';
 
-            const canDelete = currentUser && (currentUser.id === comment.authorId || currentUser.role === 'admin');
-            const deleteBtn = canDelete ? `<button class="comment-action-btn delete" onclick="deleteComment(${comment.id})">🗑️ 삭제</button>` : '';
+            // 수정/삭제/신고 버튼 (로그인한 경우에만)
+            let editDeleteButtons = '';
+            if (currentUser) {
+                if (currentUser.id === comment.authorId || currentUser.role === 'admin') {
+                    // 작성자 본인 또는 관리자: 수정/삭제 버튼
+                    editDeleteButtons = `
+                        <button class="comment-action-btn" onclick="editComment(${comment.id})">✏️ 수정</button>
+                        <button class="comment-action-btn delete" onclick="deleteComment(${comment.id})">🗑️ 삭제</button>
+                    `;
+                } else {
+                    // 다른 사용자: 신고 버튼
+                    editDeleteButtons = `<button class="comment-action-btn delete" onclick="reportComment(${comment.id})">🚨 신고</button>`;
+                }
+            }
 
             const replyBtn = currentUser ? `<button class="comment-action-btn" onclick="toggleReplyBox(${comment.id})">💬 답글</button>` : '';
 
             const replyClass = isReply ? 'reply' : '';
 
             return `
-                <div class="comment-item ${replyClass}">
+                <div class="comment-item ${replyClass}" id="comment${comment.id}">
                     <div class="comment-header">
                         <div class="comment-author" onclick="goToProfile(${authorId})">
                             <img src="${profileImage}" alt="프로필" class="comment-avatar">
@@ -1001,19 +1021,26 @@
                         </div>
                         <span class="comment-time">${timeAgo}</span>
                     </div>
-                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-content" id="commentContent${comment.id}">${comment.content}</div>
                     <div class="comment-actions">
                         <button class="comment-action-btn ${likeClass}" onclick="toggleCommentLike(${comment.id})">
                             ${likeIcon} ${comment.likes}
                         </button>
                         ${replyBtn}
-                        ${deleteBtn}
+                        ${editDeleteButtons}
                     </div>
                     <div class="reply-write" id="replyBox${comment.id}">
                         <textarea class="reply-input" id="replyInput${comment.id}" placeholder="답글을 입력하세요..."></textarea>
                         <div class="reply-buttons">
                             <button class="reply-submit" onclick="submitReply(${comment.id})">답글 작성</button>
                             <button class="reply-cancel" onclick="toggleReplyBox(${comment.id})">취소</button>
+                        </div>
+                    </div>
+                    <div class="reply-write" id="editBox${comment.id}">
+                        <textarea class="reply-input" id="editInput${comment.id}">${comment.content}</textarea>
+                        <div class="reply-buttons">
+                            <button class="reply-submit" onclick="submitCommentEdit(${comment.id})">수정 완료</button>
+                            <button class="reply-cancel" onclick="cancelCommentEdit(${comment.id})">취소</button>
                         </div>
                     </div>
                 </div>
@@ -1323,6 +1350,113 @@
             } catch (error) {
                 console.error('게시글 삭제 실패:', error);
                 alert('게시글 삭제에 실패했습니다: ' + error.message);
+            }
+        }
+
+        // 게시글 신고
+        async function reportPost() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const reason = prompt('신고 사유를 입력해주세요:');
+            if (!reason || !reason.trim()) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/report/post/${postId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('신고가 접수되었습니다.');
+                } else {
+                    alert(data.message || '신고에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('게시글 신고 실패:', error);
+                alert('신고에 실패했습니다.');
+            }
+        }
+
+        // 댓글 수정 시작
+        function editComment(commentId) {
+            // 기존 내용 숨기고 수정 박스 표시
+            document.getElementById(`commentContent${commentId}`).style.display = 'none';
+            document.getElementById(`editBox${commentId}`).style.display = 'block';
+        }
+
+        // 댓글 수정 취소
+        function cancelCommentEdit(commentId) {
+            document.getElementById(`commentContent${commentId}`).style.display = 'block';
+            document.getElementById(`editBox${commentId}`).style.display = 'none';
+        }
+
+        // 댓글 수정 제출
+        async function submitCommentEdit(commentId) {
+            const content = document.getElementById(`editInput${commentId}`).value.trim();
+
+            if (!content) {
+                alert('댓글 내용을 입력해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/comments/${commentId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 댓글 목록 새로고침
+                    await loadComments(postId);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('댓글 수정 실패:', error);
+                alert('댓글 수정에 실패했습니다.');
+            }
+        }
+
+        // 댓글 신고
+        async function reportComment(commentId) {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            const reason = prompt('신고 사유를 입력해주세요:');
+            if (!reason || !reason.trim()) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/report/comment/${commentId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason.trim() })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('신고가 접수되었습니다.');
+                } else {
+                    alert(data.message || '신고에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('댓글 신고 실패:', error);
+                alert('신고에 실패했습니다.');
             }
         }
     </script>

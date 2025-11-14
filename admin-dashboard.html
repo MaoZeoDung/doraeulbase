@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 대시보드 - 도래울베이스</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-card.highlight .value {
+            color: #f44336;
+        }
+
+        .reports-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .reports-header h2 {
+            font-size: 22px;
+            color: #333;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+        }
+
+        .report-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s;
+        }
+
+        .report-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .report-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .report-type.post {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .report-type.comment {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .report-status {
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .report-status.pending {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .report-status.resolved {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .report-status.rejected {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .report-content {
+            margin-bottom: 15px;
+        }
+
+        .report-content .label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .report-content .text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .report-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .report-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .report-btn.view {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .report-btn.view:hover {
+            background: #bbdefb;
+        }
+
+        .report-btn.resolve {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .report-btn.resolve:hover {
+            background: #c8e6c9;
+        }
+
+        .report-btn.reject {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .report-btn.reject:hover {
+            background: #ffcdd2;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #f5f5f5;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+            border-color: #1976d2;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-btn.cancel {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ 관리자 대시보드</h1>
+            <a href="/" class="back-btn">← 메인으로</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">총 회원 수</div>
+                <div class="value" id="totalUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">총 게시글</div>
+                <div class="value" id="totalPosts">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">총 댓글</div>
+                <div class="value" id="totalComments">-</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="label">대기 중 신고</div>
+                <div class="value" id="pendingReports">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">오늘 게시글</div>
+                <div class="value" id="todayPosts">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">오늘 댓글</div>
+                <div class="value" id="todayComments">-</div>
+            </div>
+        </div>
+
+        <div class="reports-section">
+            <div class="reports-header">
+                <h2>📋 신고 내역</h2>
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-status="all">전체</button>
+                    <button class="filter-tab" data-status="pending">대기중</button>
+                    <button class="filter-tab" data-status="resolved">처리완료</button>
+                    <button class="filter-tab" data-status="rejected">반려됨</button>
+                </div>
+            </div>
+
+            <div id="reportsList"></div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- 처리 모달 -->
+    <div class="modal" id="processModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">신고 처리</div>
+            <div class="modal-body">
+                <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #666;">관리자 메모 (선택사항)</label>
+                <textarea id="adminNote" placeholder="처리 내용을 입력하세요..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+                <button class="modal-btn confirm" id="confirmBtn">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let currentStatus = 'all';
+        let currentReportId = null;
+        let currentAction = null;
+
+        // 페이지 로드 시
+        async function init() {
+            // 권한 체크
+            const userResponse = await fetch('/api/user');
+            const userData = await userResponse.json();
+
+            if (!userData.success || !userData.user || userData.user.role !== 'admin') {
+                alert('관리자만 접근할 수 있습니다.');
+                window.location.href = '/';
+                return;
+            }
+
+            await loadStats();
+            await loadReports();
+        }
+
+        // 통계 로드
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('totalUsers').textContent = data.stats.totalUsers;
+                    document.getElementById('totalPosts').textContent = data.stats.totalPosts;
+                    document.getElementById('totalComments').textContent = data.stats.totalComments;
+                    document.getElementById('pendingReports').textContent = data.stats.pendingReports;
+                    document.getElementById('todayPosts').textContent = data.stats.todayPosts;
+                    document.getElementById('todayComments').textContent = data.stats.todayComments;
+                }
+            } catch (error) {
+                console.error('통계 로드 실패:', error);
+            }
+        }
+
+        // 신고 목록 로드
+        async function loadReports() {
+            const reportsList = document.getElementById('reportsList');
+            reportsList.innerHTML = '<div class="loading">로딩 중...</div>';
+
+            try {
+                const statusParam = currentStatus === 'all' ? '' : `&status=${currentStatus}`;
+                const response = await fetch(`/api/reports?page=${currentPage}&limit=10${statusParam}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.reports.length === 0) {
+                        reportsList.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <div>신고 내역이 없습니다.</div>
+                            </div>
+                        `;
+                    } else {
+                        reportsList.innerHTML = data.reports.map(report => renderReport(report)).join('');
+                    }
+
+                    renderPagination(data.page, data.totalPages);
+                }
+            } catch (error) {
+                console.error('신고 목록 로드 실패:', error);
+                reportsList.innerHTML = '<div class="empty-state">데이터 로드에 실패했습니다.</div>';
+            }
+        }
+
+        // 신고 항목 렌더링
+        function renderReport(report) {
+            const date = new Date(report.createdAt).toLocaleString('ko-KR');
+            const isPending = report.status === 'pending';
+
+            return `
+                <div class="report-item">
+                    <div class="report-header">
+                        <div>
+                            <span class="report-type ${report.type}">${report.type === 'post' ? '게시글' : '댓글'}</span>
+                            <div style="font-size: 16px; font-weight: 600; color: #333; margin-top: 5px;">
+                                ${report.targetTitle}
+                            </div>
+                        </div>
+                        <span class="report-status ${report.status}">
+                            ${report.status === 'pending' ? '대기중' : report.status === 'resolved' ? '처리완료' : '반려됨'}
+                        </span>
+                    </div>
+
+                    <div class="report-content">
+                        <div class="label">신고된 내용</div>
+                        <div class="text">${report.targetContent}</div>
+                    </div>
+
+                    <div class="report-content">
+                        <div class="label">신고 사유</div>
+                        <div class="text">${report.reason}</div>
+                    </div>
+
+                    <div class="report-meta">
+                        <span>신고자: ${report.reporterName}</span>
+                        <span>작성자: ${report.targetAuthor}</span>
+                        <span>신고 일시: ${date}</span>
+                    </div>
+
+                    ${report.adminNote ? `
+                        <div class="report-content">
+                            <div class="label">관리자 메모</div>
+                            <div class="text">${report.adminNote}</div>
+                        </div>
+                    ` : ''}
+
+                    <div class="report-actions">
+                        <button class="report-btn view" onclick="viewTarget('${report.type}', ${report.type === 'post' ? report.targetId : report.postId})">
+                            원문 보기
+                        </button>
+                        ${isPending ? `
+                            <button class="report-btn resolve" onclick="openProcessModal(${report.id}, 'resolved')">
+                                ✓ 처리완료
+                            </button>
+                            <button class="report-btn reject" onclick="openProcessModal(${report.id}, 'rejected')">
+                                ✕ 반려
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 페이지네이션 렌더링
+        function renderPagination(page, totalPages) {
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button class="page-btn" ${page === 1 ? 'disabled' : ''} onclick="changePage(${page - 1})">
+                    ← 이전
+                </button>
+                <span class="page-info">${page} / ${totalPages}</span>
+                <button class="page-btn" ${page === totalPages ? 'disabled' : ''} onclick="changePage(${page + 1})">
+                    다음 →
+                </button>
+            `;
+
+            pagination.innerHTML = html;
+        }
+
+        // 필터 탭 클릭
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentStatus = this.dataset.status;
+                currentPage = 1;
+                loadReports();
+            });
+        });
+
+        // 페이지 변경
+        function changePage(page) {
+            currentPage = page;
+            loadReports();
+        }
+
+        // 처리 모달 열기
+        function openProcessModal(reportId, action) {
+            currentReportId = reportId;
+            currentAction = action;
+            document.getElementById('modalTitle').textContent = action === 'resolved' ? '신고 처리 완료' : '신고 반려';
+            document.getElementById('adminNote').value = '';
+            document.getElementById('processModal').classList.add('show');
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('processModal').classList.remove('show');
+            currentReportId = null;
+            currentAction = null;
+        }
+
+        // 신고 처리 확인
+        document.getElementById('confirmBtn').addEventListener('click', async function() {
+            if (!currentReportId || !currentAction) return;
+
+            const adminNote = document.getElementById('adminNote').value.trim();
+
+            try {
+                const response = await fetch(`/api/reports/${currentReportId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: currentAction,
+                        adminNote: adminNote
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('처리되었습니다.');
+                    closeModal();
+                    await loadStats();
+                    await loadReports();
+                } else {
+                    alert(data.message || '처리에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('신고 처리 실패:', error);
+                alert('처리에 실패했습니다.');
+            }
+        });
+
+        // 원문 보기
+        function viewTarget(type, id) {
+            if (type === 'post') {
+                window.open(`/post-detail?id=${id}`, '_blank');
+            } else {
+                window.open(`/post-detail?id=${id}`, '_blank');
+            }
+        }
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // 초기화
+        init();
+    </script>
+</body>
+</html>

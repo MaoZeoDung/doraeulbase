@@ -575,7 +575,15 @@
             }
 
             const isOwnProfile = currentUser && currentUser.id === userProfile.id;
-            const settingsButton = isOwnProfile ? '<button class="settings-btn" onclick="openSettingsModal()">⚙️ 설정</button>' : '';
+            const isAdmin = currentUser && currentUser.role === 'admin';
+
+            let actionButtons = '';
+            if (isOwnProfile) {
+                actionButtons = '<button class="settings-btn" onclick="openSettingsModal()">⚙️ 설정</button>';
+                if (isAdmin) {
+                    actionButtons += '<button class="settings-btn" onclick="goToAdminDashboard()" style="background: linear-gradient(135deg, #f44336, #d32f2f); margin-left: 10px;">🛡️ 대시보드</button>';
+                }
+            }
 
             container.innerHTML = `
                 <div class="profile-header">
@@ -585,7 +593,7 @@
                         <div class="profile-grade">${userProfile.grade}학년</div>
                         <div class="profile-date">가입일: ${joinDate}</div>
                     </div>
-                    ${settingsButton}
+                    ${actionButtons}
                 </div>
                 <div class="profile-stats">
                     <div class="stat-item">
@@ -685,6 +693,11 @@
         // 뒤로 가기
         function goBack() {
             window.history.back();
+        }
+
+        // 관리자 대시보드로 이동
+        function goToAdminDashboard() {
+            window.location.href = '/admin-dashboard';
         }
 
         function showError(message) {
