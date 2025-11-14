@@ -36,9 +36,46 @@ if (!fs.existsSync(COMMENTS_FILE)) fs.writeFileSync(COMMENTS_FILE, '[]');
 if (!fs.existsSync(LIKES_FILE)) fs.writeFileSync(LIKES_FILE, '{"posts": {}, "comments": {}}');
 if (!fs.existsSync(REPORTS_FILE)) fs.writeFileSync(REPORTS_FILE, '[]');
 
+// 프록시 신뢰 설정 (Cloudtype 등 리버스 프록시 환경용)
+if (IS_PRODUCTION) {
+    app.set('trust proxy', 1);
+}
+
 // 미들웨어 설정
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 세션 설정 (정적 파일보다 먼저!)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'doraeul-base-secret-key-2025',
+    resave: false,
+    saveUninitialized: false,
+    name: 'doraeul.sid', // 커스텀 쿠키 이름
+    cookie: {
+        secure: IS_PRODUCTION, // 프로덕션에서는 HTTPS 필수
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24시간
+        sameSite: 'lax', // 카카오 리다이렉트를 위해 lax 사용
+        path: '/'
+        // domain 설정 제거 - 브라우저가 자동으로 설정하도록 함
+    }
+}));
+
+// 세션 디버깅 미들웨어
+app.use((req, res, next) => {
+    if (req.path.includes('/auth/kakao') || req.path.includes('/api/register') || req.path.includes('/register')) {
+        console.log('🔍 세션 체크:', {
+            path: req.path,
+            sessionID: req.sessionID,
+            hasTempUser: !!req.session.tempKakaoUser,
+            hasUser: !!req.session.user,
+            cookie: req.headers.cookie ? '있음' : '없음'
+        });
+    }
+    next();
+});
+
+// 정적 파일 제공
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -59,20 +96,6 @@ app.get('/post-detail', (req, res) => {
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'register.html'));
 });
-
-// 세션 설정
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'doraeul-base-secret-key-2025',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: IS_PRODUCTION, // 프로덕션에서는 HTTPS 필수
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24시간
-        sameSite: 'lax', // 카카오 리다이렉트를 위해 lax 사용
-        path: '/'
-    }
-}));
 
 // 파일 업로드 설정 (프로필 사진)
 const storage = multer.diskStorage({
@@ -176,11 +199,28 @@ app.get('/auth/kakao/callback', async (req, res) => {
                 kakaoName,
                 kakaoProfileImage
             };
-            return res.redirect('/register');
+
+            // 세션 저장 확인 후 리다이렉트
+            req.session.save((err) => {
+                if (err) {
+                    console.error('세션 저장 실패:', err);
+                    return res.redirect('/?error=session_failed');
+                }
+                console.log('✅ 세션 저장 성공 - 회원가입 페이지로 이동:', req.sessionID);
+                res.redirect('/register');
+            });
         } else {
             // 기존 회원 - 로그인 처리
             req.session.user = user;
-            res.redirect('/');
+
+            req.session.save((err) => {
+                if (err) {
+                    console.error('세션 저장 실패:', err);
+                    return res.redirect('/?error=session_failed');
+                }
+                console.log('✅ 기존 회원 로그인 성공:', user.name);
+                res.redirect('/');
+            });
         }
 
     } catch (error) {
@@ -225,7 +265,15 @@ app.post('/api/register', (req, res) => {
     req.session.user = newUser;
     delete req.session.tempKakaoUser;
 
-    res.json({ success: true, user: newUser });
+    // 세션 저장 확인
+    req.session.save((err) => {
+        if (err) {
+            console.error('회원가입 세션 저장 실패:', err);
+            return res.status(500).json({ success: false, message: '회원가입 처리 중 오류가 발생했습니다.' });
+        }
+        console.log('✅ 회원가입 완료:', newUser.name);
+        res.json({ success: true, user: newUser });
+    });
 });
 
 // 프로필 사진 업로드
