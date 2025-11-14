@@ -61,19 +61,19 @@ app.use(session({
     }
 }));
 
-// 세션 디버깅 미들웨어
-app.use((req, res, next) => {
-    if (req.path.includes('/auth/kakao') || req.path.includes('/api/register') || req.path.includes('/register')) {
-        console.log('🔍 세션 체크:', {
-            path: req.path,
-            sessionID: req.sessionID,
-            hasTempUser: !!req.session.tempKakaoUser,
-            hasUser: !!req.session.user,
-            cookie: req.headers.cookie ? '있음' : '없음'
-        });
-    }
-    next();
-});
+// 세션 디버깅 미들웨어 (문제 발생 시 주석 해제)
+// app.use((req, res, next) => {
+//     if (req.path.includes('/auth/kakao') || req.path.includes('/api/register') || req.path.includes('/register')) {
+//         console.log('🔍 세션 체크:', {
+//             path: req.path,
+//             sessionID: req.sessionID,
+//             hasTempUser: !!req.session.tempKakaoUser,
+//             hasUser: !!req.session.user,
+//             cookie: req.headers.cookie ? '있음' : '없음'
+//         });
+//     }
+//     next();
+// });
 
 // 정적 파일 제공
 app.use(express.static(__dirname));
