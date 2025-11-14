@@ -644,6 +644,12 @@
                 const registerData = await registerResponse.json();
 
                 if (!registerData.success) {
+                    if (registerData.redirect) {
+                        // 세션 만료 시 카카오 로그인으로 리다이렉트
+                        alert(registerData.message);
+                        window.location.href = '/auth/kakao';
+                        return;
+                    }
                     throw new Error(registerData.message);
                 }
 

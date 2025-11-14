@@ -65,11 +65,12 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'doraeul-base-secret-key-2025',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         secure: IS_PRODUCTION, // 프로덕션에서는 HTTPS 필수
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000, // 24시간
-        sameSite: IS_PRODUCTION ? 'strict' : 'lax'
+        sameSite: 'lax', // 카카오 리다이렉트를 위해 lax 사용
+        path: '/'
     }
 }));
 
@@ -194,7 +195,12 @@ app.post('/api/register', (req, res) => {
     const tempUser = req.session.tempKakaoUser;
 
     if (!tempUser) {
-        return res.status(400).json({ success: false, message: '세션이 만료되었습니다.' });
+        console.error('회원가입 세션 만료 - 세션 ID:', req.sessionID);
+        return res.status(400).json({
+            success: false,
+            message: '세션이 만료되었습니다. 카카오 로그인을 다시 시도해주세요.',
+            redirect: true
+        });
     }
 
     if (!name || !grade) {
