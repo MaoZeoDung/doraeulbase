@@ -113,10 +113,17 @@ function writeJSON(filepath, data) {
 
 // ============= 카카오 로그인 설정 =============
 const KAKAO_CONFIG = {
-    CLIENT_ID: process.env.KAKAO_CLIENT_ID || '36fe6a8e7d85bfd61e9d474df2dbda16',
+    CLIENT_ID: process.env.KAKAO_CLIENT_ID,
     REDIRECT_URI: process.env.KAKAO_REDIRECT_URI || `http://localhost:${PORT}/auth/kakao/callback`,
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET || ''
 };
+
+// 필수 환경변수 검증
+if (!KAKAO_CONFIG.CLIENT_ID) {
+    console.error('⚠️  오류: KAKAO_CLIENT_ID 환경변수가 설정되지 않았습니다.');
+    console.error('   .env 파일에 KAKAO_CLIENT_ID를 추가해주세요.');
+    process.exit(1);
+}
 
 // 카카오 로그인 페이지로 리다이렉트
 app.get('/auth/kakao', (req, res) => {
@@ -328,7 +335,7 @@ app.post('/api/posts', (req, res) => {
         return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
     }
 
-    const { category, title, content, captchaToken } = req.body;
+    const { category, title, content, captchaToken, images, files } = req.body;
 
     // 공지사항은 관리자만 작성 가능
     if (category === 'notice' && req.session.user.role !== 'admin') {
@@ -341,7 +348,7 @@ app.post('/api/posts', (req, res) => {
     }
 
     const posts = readJSON(POSTS_FILE);
-    
+
     const categoryNames = {
         'notice': '공지',
         'info': '정보',
@@ -361,7 +368,9 @@ app.post('/api/posts', (req, res) => {
         time: new Date().toTimeString().slice(0, 5),
         views: 0,
         likes: 0,
-        comments: 0
+        comments: 0,
+        images: images || [],
+        files: files || []
     };
 
     posts.unshift(newPost); // 최신 글을 맨 앞에 추가
@@ -937,7 +946,7 @@ const uploadPostImage = multer({
     fileFilter: (req, file, cb) => {
         const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
         const ext = path.extname(file.originalname).toLowerCase();
-        if (allowedExts.includes(ext)) { cb(null, true); } 
+        if (allowedExts.includes(ext)) { cb(null, true); }
         else { cb(new Error('허용되지 않는 파일 형식입니다.')); }
     }
 });
@@ -950,6 +959,55 @@ app.post('/api/upload-post-image', uploadPostImage.single('image'), (req, res) =
         return res.status(400).json({ success: false, message: '파일이 업로드되지 않았습니다.' });
     }
     res.json({ success: true, imageUrl: `/uploads/${req.file.filename}` });
+});
+
+// ============= 다중 이미지/파일 업로드 API =============
+
+const postAttachmentStorage = multer.diskStorage({
+    destination: (req, file, cb) => { cb(null, UPLOADS_DIR); },
+    filename: (req, file, cb) => {
+        const prefix = file.mimetype.startsWith('image/') ? 'img' : 'file';
+        const uniqueName = `${prefix}-${Date.now()}-${crypto.randomBytes(6).toString('hex')}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    }
+});
+
+const uploadPostAttachments = multer({
+    storage: postAttachmentStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB per file
+    fileFilter: (req, file, cb) => {
+        // 이미지 확장자
+        const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+        // 파일 확장자
+        const fileExts = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.hwp', '.zip', '.rar', '.7z'];
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (imageExts.includes(ext) || fileExts.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('허용되지 않는 파일 형식입니다.'));
+        }
+    }
+});
+
+// 다중 파일 업로드 (최대 30개)
+app.post('/api/upload-attachments', uploadPostAttachments.array('files', 30), (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: false, message: '파일이 업로드되지 않았습니다.' });
+    }
+
+    const uploadedFiles = req.files.map(file => ({
+        url: `/uploads/${file.filename}`,
+        originalName: file.originalname,
+        size: file.size,
+        type: file.mimetype
+    }));
+
+    res.json({ success: true, files: uploadedFiles });
 });
 
 // ============= 검색 API =============
@@ -974,23 +1032,74 @@ app.get('/api/search', (req, res) => {
     res.json({ success: true, users: matchedUsers, posts: matchedPosts });
 });
 
+// ============= 에러 핸들러 =============
+
+// Multer 에러 처리 미들웨어
+app.use((error, req, res, next) => {
+    if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                success: false,
+                message: '파일 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다.'
+            });
+        }
+        if (error.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({
+                success: false,
+                message: '파일 개수가 너무 많습니다. 최대 30개까지 업로드 가능합니다.'
+            });
+        }
+        if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+            return res.status(400).json({
+                success: false,
+                message: '예상치 못한 파일 필드입니다.'
+            });
+        }
+        return res.status(400).json({
+            success: false,
+            message: '파일 업로드 중 오류가 발생했습니다: ' + error.message
+        });
+    }
+
+    if (error.message && error.message.includes('허용되지 않는 파일 형식')) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+
+    // 기타 에러
+    console.error('서버 오류:', error);
+    res.status(500).json({
+        success: false,
+        message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+    });
+});
+
+// 404 에러 처리
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: '요청한 페이지를 찾을 수 없습니다.'
+    });
+});
+
 // ============= 서버 시작 =============
 app.listen(PORT, () => {
     console.log(`
 ╔════════════════════════════════════════╗
 ║     도래울베이스 서버 실행 중!        ║
 ╚════════════════════════════════════════╝
-    
+
 🌐 서버 주소: http://localhost:${PORT}
 📁 데이터 저장 경로: ${DATA_DIR}
 📤 업로드 경로: ${UPLOADS_DIR}
 
 ⚠️  주의사항:
-1. 카카오 개발자 센터에서 REST API 키를 발급받아
-   KAKAO_CONFIG.CLIENT_ID에 입력해주세요.
+1. .env 파일에 KAKAO_CLIENT_ID를 설정해주세요.
 2. 리다이렉트 URI를 카카오 개발자 센터에 등록해주세요:
-   http://localhost:${PORT}/auth/kakao/callback
+   ${KAKAO_CONFIG.REDIRECT_URI}
 
-🚀 브라우저에서 http://localhost:${PORT}/doraeul-base.html 접속
+🚀 브라우저에서 http://localhost:${PORT} 접속
     `);
 });
