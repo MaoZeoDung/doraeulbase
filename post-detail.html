@@ -319,6 +319,24 @@
             background: #357abd;
         }
 
+        .edit-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #f57c00;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f;
+        }
+
         /* 댓글 섹션 */
         .comments-container {
             background: white;
@@ -811,6 +829,15 @@
                 `;
             }
 
+            // 수정/삭제 버튼 (작성자 본인 또는 관리자만)
+            let editDeleteButtons = '';
+            if (currentUser && (currentUser.id === currentPost.authorId || currentUser.role === 'admin')) {
+                editDeleteButtons = `
+                    <button class="action-btn edit-btn" onclick="editPost()">✏️ 수정</button>
+                    <button class="action-btn delete-btn" onclick="deletePost()">🗑️ 삭제</button>
+                `;
+            }
+
             container.innerHTML = `
                 <div class="post-header">
                     <div class="post-category ${categoryClass}">${currentPost.categoryName}</div>
@@ -839,6 +866,7 @@
                         <span id="postLikeIcon">${likeText}</span>
                         <span>좋아요 <span id="postLikeCount">${currentPost.likes}</span></span>
                     </button>
+                    ${editDeleteButtons}
                     <button class="action-btn list-btn" onclick="goToList()">목록으로</button>
                 </div>
             `;
@@ -1257,6 +1285,46 @@
                 closeImageModal();
             }
         });
+
+        // 게시글 수정
+        function editPost() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+            // 수정 페이지로 이동 (게시글 ID 전달)
+            window.location.href = `/edit-post?id=${postId}`;
+        }
+
+        // 게시글 삭제
+        async function deletePost() {
+            if (!currentUser) {
+                alert('로그인이 필요합니다.');
+                return;
+            }
+
+            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?\n댓글도 함께 삭제됩니다.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('게시글이 삭제되었습니다.');
+                    window.location.href = '/';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('게시글 삭제 실패:', error);
+                alert('게시글 삭제에 실패했습니다: ' + error.message);
+            }
+        }
     </script>
 </body>
 </html>

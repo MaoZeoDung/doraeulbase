@@ -430,6 +430,10 @@ app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'profile.html'));
 });
 
+app.get('/edit-post', (req, res) => {
+    res.sendFile(path.join(__dirname, 'edit-post.html'));
+});
+
 // ============= 댓글 API =============
 
 // 댓글 목록 가져오기
@@ -875,7 +879,7 @@ app.put('/api/posts/:id', (req, res) => {
         return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
     }
 
-    const { title, content, category } = req.body;
+    const { title, content, category, images, files } = req.body;
     const posts = readJSON(POSTS_FILE);
     const postIndex = posts.findIndex(p => p.id === parseInt(req.params.id));
 
@@ -885,8 +889,14 @@ app.put('/api/posts/:id', (req, res) => {
 
     const post = posts[postIndex];
 
-    if (post.authorId !== req.session.user.id) {
+    // 작성자 본인 또는 관리자만 수정 가능
+    if (post.authorId !== req.session.user.id && req.session.user.role !== 'admin') {
         return res.status(403).json({ success: false, message: '권한이 없습니다.' });
+    }
+
+    // 공지사항은 관리자만 지정 가능
+    if (category === 'notice' && req.session.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: '공지사항은 관리자만 작성할 수 있습니다.' });
     }
 
     if (title) post.title = title;
@@ -896,6 +906,10 @@ app.put('/api/posts/:id', (req, res) => {
         const categoryNames = {'notice': '공지', 'info': '정보', 'question': '질문', 'free': '자유'};
         post.categoryName = categoryNames[category];
     }
+
+    // 이미지와 파일 업데이트
+    if (images !== undefined) post.images = images;
+    if (files !== undefined) post.files = files;
 
     writeJSON(POSTS_FILE, posts);
     res.json({ success: true, post });

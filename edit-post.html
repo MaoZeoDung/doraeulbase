@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글 수정 - 도래울베이스</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .form-group select,
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .form-group textarea {
+            min-height: 300px;
+            resize: vertical;
+        }
+
+        /* 파일 업로드 영역 */
+        .upload-section {
+            margin-bottom: 25px;
+        }
+
+        .upload-area {
+            border: 2px dashed #d0d0d0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.drag-over {
+            border-color: #1976d2;
+            background: #f0f7ff;
+        }
+
+        .upload-area-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .upload-btn {
+            padding: 10px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:hover {
+            background: #1565c0;
+        }
+
+        .upload-btn.secondary {
+            background: #4caf50;
+        }
+
+        .upload-btn.secondary:hover {
+            background: #45a049;
+        }
+
+        /* 업로드된 파일 목록 */
+        .uploaded-files {
+            margin-top: 20px;
+        }
+
+        .file-list-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            background: #e9ecef;
+        }
+
+        .file-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #ddd;
+            flex-shrink: 0;
+        }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .file-remove {
+            padding: 6px 12px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .file-remove:hover {
+            background: #d32f2f;
+        }
+
+        .file-count {
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .file-count.warning {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .captcha-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .captcha-question {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .captcha-input {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            display: block;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .submit-btn,
+        .cancel-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #42a5f5, #1976d2);
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(25, 118, 210, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .cancel-btn {
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+        }
+
+        .cancel-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .notice-warning {
+            background: #fff3e0;
+            color: #e65100;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .upload-buttons {
+                flex-direction: column;
+            }
+
+            .upload-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✏️ 글 수정</h1>
+            <p>게시글 내용을 수정할 수 있습니다.</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="notice-warning" id="noticeWarning">
+            ⚠️ 공지사항은 관리자만 작성할 수 있습니다.
+        </div>
+
+        <form id="writeForm">
+            <div class="form-group">
+                <label for="category">카테고리 *</label>
+                <select id="category" name="category" required>
+                    <option value="">카테고리를 선택하세요</option>
+                    <option value="notice">공지사항 (관리자 전용)</option>
+                    <option value="info">자료·정보 공유</option>
+                    <option value="question">질문게시판</option>
+                    <option value="free">자유게시판</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="title">제목 *</label>
+                <input type="text" id="title" name="title" placeholder="제목을 입력하세요" required maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label for="content">내용 *</label>
+                <textarea id="content" name="content" placeholder="내용을 입력하세요 (Ctrl+V로 이미지 붙여넣기 가능)" required></textarea>
+            </div>
+
+            <!-- 파일 업로드 영역 -->
+            <div class="upload-section">
+                <label>이미지 & 파일 첨부 (최대 30개, 각 10MB)</label>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-area-content">
+                        <div class="upload-icon">📎</div>
+                        <div class="upload-text">파일을 드래그하거나 클릭하여 업로드</div>
+                        <div class="upload-hint">이미지: JPG, PNG, GIF, WebP | 파일: PDF, DOC, XLS, PPT, HWP, ZIP 등</div>
+                        <div class="upload-buttons">
+                            <button type="button" class="upload-btn" onclick="selectFiles()">
+                                🖼️ 이미지 선택
+                            </button>
+                            <button type="button" class="upload-btn secondary" onclick="selectFiles()">
+                                📄 파일 선택
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.hwp,.zip,.rar,.7z">
+
+                <div class="uploaded-files" id="uploadedFiles" style="display: none;">
+                    <div class="file-list-title">첨부된 파일</div>
+                    <div id="fileList"></div>
+                    <div class="file-count" id="fileCount">0 / 30개</div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="cancel-btn" onclick="goBack()">취소</button>
+                <button type="submit" class="submit-btn" id="submitBtn">수정 완료</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let uploadedFiles = []; // 업로드된 파일 정보 저장
+        let postId = null;
+        let originalPost = null;
+
+        // 페이지 로드 시 실행
+        window.addEventListener('load', async () => {
+            // URL에서 게시글 ID 가져오기
+            const urlParams = new URLSearchParams(window.location.search);
+            postId = urlParams.get('id');
+
+            if (!postId) {
+                alert('잘못된 접근입니다.');
+                window.location.href = '/';
+                return;
+            }
+
+            await checkLogin();
+            await loadPost();
+            setupCategoryCheck();
+            setupFileUpload();
+            setupPasteImage();
+        });
+
+        // 로그인 확인
+        async function checkLogin() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+
+                if (!data.success || !data.user) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/auth/kakao';
+                    return;
+                }
+
+                currentUser = data.user;
+            } catch (error) {
+                console.error('로그인 확인 실패:', error);
+                alert('로그인 상태를 확인할 수 없습니다.');
+                window.location.href = '/';
+            }
+        }
+
+        // 기존 게시글 데이터 로드
+        async function loadPost() {
+            try {
+                const response = await fetch(`/api/posts/${postId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message);
+                }
+
+                originalPost = data.post;
+
+                // 권한 확인 (작성자 본인 또는 관리자만 수정 가능)
+                if (currentUser.id !== originalPost.authorId && currentUser.role !== 'admin') {
+                    alert('수정 권한이 없습니다.');
+                    window.location.href = `/post-detail?id=${postId}`;
+                    return;
+                }
+
+                // 폼에 데이터 채우기
+                document.getElementById('category').value = originalPost.category;
+                document.getElementById('title').value = originalPost.title;
+                document.getElementById('content').value = originalPost.content;
+
+                // 기존 첨부파일 로드
+                if (originalPost.images && originalPost.images.length > 0) {
+                    uploadedFiles = uploadedFiles.concat(originalPost.images);
+                }
+                if (originalPost.files && originalPost.files.length > 0) {
+                    uploadedFiles = uploadedFiles.concat(originalPost.files);
+                }
+
+                if (uploadedFiles.length > 0) {
+                    renderFileList();
+                }
+
+            } catch (error) {
+                console.error('게시글 로드 실패:', error);
+                alert('게시글을 불러올 수 없습니다.');
+                window.location.href = '/';
+            }
+        }
+
+        // 카테고리 선택 시 공지사항 경고
+        function setupCategoryCheck() {
+            const categorySelect = document.getElementById('category');
+            const noticeWarning = document.getElementById('noticeWarning');
+
+            categorySelect.addEventListener('change', () => {
+                if (categorySelect.value === 'notice') {
+                    if (currentUser && currentUser.role === 'admin') {
+                        noticeWarning.style.display = 'none';
+                    } else {
+                        noticeWarning.style.display = 'block';
+                        noticeWarning.textContent = '⚠️ 공지사항은 관리자만 작성할 수 있습니다. 다른 카테고리를 선택해주세요.';
+                    }
+                } else {
+                    noticeWarning.style.display = 'none';
+                }
+            });
+        }
+
+        // 파일 업로드 설정
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // 드래그앤드롭
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+
+                const files = Array.from(e.dataTransfer.files);
+                handleFiles(files);
+            });
+
+            // 클릭하여 업로드
+            uploadArea.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    fileInput.click();
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                handleFiles(files);
+                fileInput.value = ''; // 같은 파일 재선택 가능하도록
+            });
+        }
+
+        // 파일 선택 버튼
+        function selectFiles() {
+            document.getElementById('fileInput').click();
+        }
+
+        // 클립보드 이미지 붙여넣기
+        function setupPasteImage() {
+            const contentArea = document.getElementById('content');
+
+            contentArea.addEventListener('paste', async (e) => {
+                const items = e.clipboardData.items;
+                const imageFiles = [];
+
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const file = item.getAsFile();
+                        imageFiles.push(file);
+                    }
+                }
+
+                if (imageFiles.length > 0) {
+                    await handleFiles(imageFiles);
+                    showSuccess(`${imageFiles.length}개의 이미지가 붙여넣기되었습니다.`);
+                }
+            });
+        }
+
+        // 파일 처리
+        async function handleFiles(files) {
+            if (uploadedFiles.length + files.length > 30) {
+                showError(`최대 30개까지만 첨부할 수 있습니다. (현재 ${uploadedFiles.length}개)`);
+                return;
+            }
+
+            const formData = new FormData();
+            files.forEach(file => {
+                // 파일 크기 체크 (10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    showError(`${file.name}은(는) 10MB를 초과합니다.`);
+                    return;
+                }
+                formData.append('files', file);
+            });
+
+            try {
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '업로드 중...';
+
+                const response = await fetch('/api/upload-attachments', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    uploadedFiles = uploadedFiles.concat(data.files);
+                    renderFileList();
+                    showSuccess(`${data.files.length}개의 파일이 업로드되었습니다.`);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('파일 업로드 실패:', error);
+                showError('파일 업로드에 실패했습니다: ' + error.message);
+            } finally {
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '작성 완료';
+            }
+        }
+
+        // 파일 목록 렌더링
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            const uploadedFilesSection = document.getElementById('uploadedFiles');
+            const fileCount = document.getElementById('fileCount');
+
+            if (uploadedFiles.length === 0) {
+                uploadedFilesSection.style.display = 'none';
+                return;
+            }
+
+            uploadedFilesSection.style.display = 'block';
+            fileCount.textContent = `${uploadedFiles.length} / 30개`;
+
+            if (uploadedFiles.length >= 25) {
+                fileCount.classList.add('warning');
+            } else {
+                fileCount.classList.remove('warning');
+            }
+
+            fileList.innerHTML = uploadedFiles.map((file, index) => {
+                const isImage = file.type.startsWith('image/');
+                const sizeInKB = (file.size / 1024).toFixed(1);
+                const sizeText = sizeInKB > 1024 ? `${(sizeInKB / 1024).toFixed(1)} MB` : `${sizeInKB} KB`;
+
+                return `
+                    <div class="file-item">
+                        ${isImage ?
+                            `<img src="${file.url}" class="file-preview" alt="미리보기">` :
+                            `<div class="file-icon">📄</div>`
+                        }
+                        <div class="file-info">
+                            <div class="file-name">${file.originalName}</div>
+                            <div class="file-size">${sizeText}</div>
+                        </div>
+                        <button type="button" class="file-remove" onclick="removeFile(${index})">삭제</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 파일 삭제
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        // 폼 제출
+        document.getElementById('writeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+
+            // 유효성 검사
+            if (!category || !title || !content) {
+                showError('모든 필수 항목을 입력해주세요.');
+                return;
+            }
+
+            // 공지사항 권한 확인
+            if (category === 'notice' && currentUser.role !== 'admin') {
+                showError('공지사항은 관리자만 작성할 수 있습니다.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '수정 중...';
+
+            try {
+                // 이미지와 파일 분리
+                const images = uploadedFiles.filter(f => f.type.startsWith('image/'));
+                const files = uploadedFiles.filter(f => !f.type.startsWith('image/'));
+
+                // 게시글 수정 (PUT 요청)
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category,
+                        title,
+                        content,
+                        images,
+                        files
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('게시글이 수정되었습니다!');
+                    window.location.href = `/post-detail?id=${postId}`;
+                } else {
+                    throw new Error(data.message);
+                }
+
+            } catch (error) {
+                console.error('게시글 수정 실패:', error);
+                showError(error.message || '게시글 수정에 실패했습니다.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '수정 완료';
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showSuccess(message) {
+            // 간단한 성공 메시지 (옵션)
+            console.log('✅', message);
+        }
+
+        function goBack() {
+            if (confirm('수정 중인 내용이 사라집니다. 취소하시겠습니까?')) {
+                window.location.href = `/post-detail?id=${postId}`;
+            }
+        }
+    </script>
+</body>
+</html>
