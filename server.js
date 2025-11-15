@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const axios = require('axios');
 const multer = require('multer');
 const path = require('path');
@@ -20,10 +21,12 @@ const COMMENTS_FILE = path.join(DATA_DIR, 'comments.json');
 const LIKES_FILE = path.join(DATA_DIR, 'likes.json');
 const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const SESSIONS_DIR = path.join(__dirname, 'sessions');
 
 // 디렉토리 생성
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 
 // 초기 데이터 파일 생성
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]');
@@ -47,6 +50,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // 세션 설정 (정적 파일보다 먼저!)
 app.use(session({
+    store: new FileStore({
+        path: SESSIONS_DIR,
+        ttl: 86400, // 24시간 (초 단위)
+        retries: 0
+    }),
     secret: process.env.SESSION_SECRET || 'doraeul-base-secret-key-2025',
     resave: false,
     saveUninitialized: false,
@@ -350,7 +358,34 @@ app.get('/api/temp-user', (req, res) => {
 // 게시글 목록 가져오기
 app.get('/api/posts', (req, res) => {
     const posts = readJSON(POSTS_FILE);
-    res.json({ success: true, posts });
+
+    // 페이지네이션 파라미터
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // 최신순 정렬 (id가 큰 것부터)
+    const sortedPosts = posts.sort((a, b) => b.id - a.id);
+
+    // 페이지네이션 적용
+    const paginatedPosts = sortedPosts.slice(offset, offset + limit);
+
+    // 페이지네이션 메타데이터
+    const totalPosts = posts.length;
+    const totalPages = Math.ceil(totalPosts / limit);
+
+    res.json({
+        success: true,
+        posts: paginatedPosts,
+        pagination: {
+            currentPage: page,
+            totalPages: totalPages,
+            totalPosts: totalPosts,
+            limit: limit,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+        }
+    });
 });
 
 // 게시글 상세 보기
