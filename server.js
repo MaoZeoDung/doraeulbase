@@ -367,20 +367,29 @@ app.get('/api/posts', (req, res) => {
     // 최신순 정렬 (id가 큰 것부터)
     const sortedPosts = posts.sort((a, b) => b.id - a.id);
 
-    // 페이지네이션 적용
-    const paginatedPosts = sortedPosts.slice(offset, offset + limit);
+    // 공지사항과 일반 게시글 분리
+    const notices = sortedPosts.filter(p => p.category === 'notice');
+    const regularPosts = sortedPosts.filter(p => p.category !== 'notice');
 
-    // 페이지네이션 메타데이터
-    const totalPosts = posts.length;
+    // 공지사항 최신 3개
+    const topNotices = notices.slice(0, 3);
+
+    // 일반 게시글에만 페이지네이션 적용
+    const paginatedPosts = regularPosts.slice(offset, offset + limit);
+
+    // 페이지네이션 메타데이터 (일반 게시글 기준)
+    const totalPosts = regularPosts.length;
     const totalPages = Math.ceil(totalPosts / limit);
 
     res.json({
         success: true,
         posts: paginatedPosts,
+        topNotices: topNotices, // 공지사항 최신 3개
         pagination: {
             currentPage: page,
             totalPages: totalPages,
             totalPosts: totalPosts,
+            totalNotices: notices.length,
             limit: limit,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1

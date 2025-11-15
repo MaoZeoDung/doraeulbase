@@ -706,6 +706,7 @@
     <script>
         let currentUser = null;
         let allPosts = [];
+        let topNotices = []; // 공지사항 최신 3개
         let currentPage = 1;
         const postsPerPage = 30;
         let currentCategory = 'all';
@@ -767,6 +768,7 @@
 
                 if (data.success) {
                     allPosts = data.posts;
+                    topNotices = data.topNotices || []; // 서버에서 받은 공지사항 최신 3개
                     paginationData = data.pagination;
 
                     // 카테고리별 필터링이 아닌 경우 서버 페이지네이션 사용
@@ -793,34 +795,29 @@
 
             let postsToDisplay = [];
 
-            // 'all' 카테고리는 서버 페이지네이션 사용 (이미 페이지네이션된 데이터)
-            if (currentCategory === 'all') {
-                // 공지사항 필터링 (상단 고정용)
-                const notices = allPosts.filter(post => post.category === 'notice');
-                const topNotices = notices.slice(0, 3);
-
-                // 서버에서 이미 페이지네이션된 데이터 사용
-                postsToDisplay = allPosts;
-            } else {
-                // 특정 카테고리는 클라이언트 페이지네이션
+            // 공지사항 카테고리인 경우 공지사항만 표시
+            if (currentCategory === 'notice') {
+                postsToDisplay = topNotices;
+            }
+            // 전체 게시판인 경우
+            else if (currentCategory === 'all') {
+                // 공지사항 최신 3개 + 서버에서 페이지네이션된 일반 게시글
+                postsToDisplay = [...topNotices, ...allPosts];
+            }
+            // 특정 카테고리인 경우 (정보, 질문, 자유)
+            else {
+                // 공지사항 최신 3개 + 해당 카테고리 게시글
                 const filteredPosts = allPosts.filter(post => post.category === currentCategory);
-                const notices = filteredPosts.filter(post => post.category === 'notice');
-                const regularPosts = filteredPosts.filter(post => post.category !== 'notice');
 
-                // 공지사항 상단 고정 (최대 3개)
-                const topNotices = notices.slice(0, 3);
+                // 클라이언트 페이지네이션 적용
+                const startIndex = (currentPage - 1) * postsPerPage;
+                const endIndex = startIndex + postsPerPage;
+                const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
-                // 페이지네이션
-                if (currentCategory === 'notice') {
-                    postsToDisplay = notices;
-                } else {
-                    const startIndex = (currentPage - 1) * postsPerPage;
-                    const endIndex = startIndex + postsPerPage;
-                    const paginatedPosts = regularPosts.slice(startIndex, endIndex);
-                    postsToDisplay = [...topNotices, ...paginatedPosts];
-                }
+                postsToDisplay = [...topNotices, ...paginatedPosts];
             }
 
+            // 게시글이 없는 경우
             if (postsToDisplay.length === 0) {
                 tbody.innerHTML = `
                     <tr><td colspan="6" style="padding: 40px; color: #999;">
@@ -830,6 +827,7 @@
                 return;
             }
 
+            // 게시글 렌더링
             postsToDisplay.forEach((post) => {
                 const tr = document.createElement('tr');
                 tr.onclick = () => viewPost(post.id);
@@ -858,18 +856,18 @@
                     <td class="col-likes post-stats">좋아요: ${post.likes}</td>
                 `;
 
-                tr.onclick = () => viewPost(post.id);
-
                 tbody.appendChild(tr);
             });
 
             // 페이지네이션 렌더링
             if (currentCategory === 'all') {
                 renderPagination(null); // 서버 페이지네이션 사용
+            } else if (currentCategory === 'notice') {
+                renderPagination(topNotices); // 공지사항만
             } else {
+                // 특정 카테고리의 게시글만 (공지사항 제외)
                 const filteredPosts = allPosts.filter(post => post.category === currentCategory);
-                const regularPosts = filteredPosts.filter(post => post.category !== 'notice');
-                renderPagination(currentCategory === 'notice' ? filteredPosts : regularPosts);
+                renderPagination(filteredPosts);
             }
         }
 
