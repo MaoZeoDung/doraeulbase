@@ -341,15 +341,101 @@
 
         @media (max-width: 768px) {
             .register-container {
-                padding: 35px 25px;
+                padding: 30px 20px;
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
             }
 
+            .logo img {
+                max-width: 200px;
+            }
+
+            .register-title {
+                font-size: 22px;
+                margin-bottom: 15px;
+            }
+
+            .register-subtitle {
+                font-size: 13px;
+            }
+
+            .kakao-info {
+                padding: 15px;
+            }
+
+            .kakao-profile-image {
+                width: 60px;
+                height: 60px;
+            }
+
+            .kakao-name {
+                font-size: 16px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-control, select {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .profile-upload-section {
+                margin-top: 20px;
+            }
+
+            .upload-label {
+                font-size: 13px;
+            }
+
+            .upload-btn {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            .preview-image {
+                width: 80px;
+                height: 80px;
+            }
+
+            .help-text {
+                font-size: 11px;
+            }
+
+            /* 크롭 모달 */
             .crop-container {
-                padding: 20px;
+                padding: 15px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            .crop-container h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
             }
 
             .crop-image-container {
-                max-height: 400px;
+                max-height: 350px;
+                margin-bottom: 15px;
+            }
+
+            .crop-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .crop-buttons button {
+                width: 100%;
+                padding: 10px;
+                font-size: 14px;
             }
         }
     </style>

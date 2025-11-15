@@ -563,42 +563,227 @@
         }
 
         @media (max-width: 768px) {
-            header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
+            /* 광고 영역 숨기기 */
+            .ad-left, .ad-right {
+                display: none;
             }
 
+            /* 래퍼 중앙 정렬 */
+            .wrapper {
+                flex-direction: column;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            /* 헤더 모바일 최적화 */
+            header {
+                padding: 15px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .logo-section {
+                justify-content: center;
+            }
+
+            .logo-section img {
+                max-width: 180px;
+                height: auto;
+            }
+
+            /* 검색창 모바일 최적화 */
+            .search-container {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .search-input {
+                font-size: 14px;
+                padding: 10px 15px;
+            }
+
+            /* 사용자 정보 모바일 최적화 */
+            .header-right {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .user-info {
+                padding: 8px 15px;
+            }
+
+            .user-profile-img {
+                width: 30px;
+                height: 30px;
+            }
+
+            .user-name {
+                font-size: 13px;
+            }
+
+            .user-grade {
+                font-size: 11px;
+            }
+
+            .login-btn, .logout-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            /* 네비게이션 모바일 최적화 */
             nav {
-                padding: 0 20px;
+                padding: 0 15px;
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .nav-items {
                 min-width: max-content;
+                gap: 5px;
             }
 
             .nav-item {
-                padding: 12px 15px;
-                font-size: 14px;
-            }
-
-            .main-content {
-                padding: 20px;
-            }
-
-            .post-table {
+                padding: 10px 12px;
                 font-size: 13px;
+                white-space: nowrap;
+            }
+
+            /* 메인 컨텐츠 모바일 최적화 */
+            .main-content {
+                padding: 15px;
+            }
+
+            .board-header {
+                flex-direction: row;
+                gap: 10px;
+            }
+
+            .board-title {
+                font-size: 18px;
+            }
+
+            .write-btn {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            /* 테이블 모바일 최적화 */
+            .post-table {
+                font-size: 12px;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .post-table thead {
+                display: block;
+            }
+
+            .post-table tbody {
+                display: block;
+            }
+
+            .post-table tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
             }
 
             .post-table th,
             .post-table td {
-                padding: 10px 5px;
+                padding: 8px 4px;
+                font-size: 12px;
             }
 
+            /* 조회수, 좋아요 숨기기 */
             .col-views,
             .col-likes {
-                display: none;
+                display: none !important;
+            }
+
+            .post-table th:first-child,
+            .post-table td:first-child {
+                width: 50px !important;
+            }
+
+            .post-table th:nth-child(3),
+            .post-table td:nth-child(3) {
+                width: 70px !important;
+            }
+
+            .post-table th:nth-child(4),
+            .post-table td:nth-child(4) {
+                width: 80px !important;
+                font-size: 11px;
+            }
+
+            .title-col {
+                max-width: none;
+            }
+
+            .post-title-text {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 150px;
+            }
+
+            .post-category-badge {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+
+            .comment-count {
+                font-size: 11px;
+            }
+
+            /* 페이지네이션 모바일 최적화 */
+            .pagination {
+                flex-wrap: wrap;
+                gap: 5px;
+                padding: 15px 10px;
+            }
+
+            .pagination-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+                min-width: 35px;
+            }
+
+            .page-input-group {
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            .page-input {
+                width: 60px;
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            .page-go-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            /* 검색 결과 모바일 최적화 */
+            .search-results {
+                max-width: calc(100vw - 30px);
+                max-height: 60vh;
+            }
+
+            .search-section-title {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            .search-item {
+                padding: 10px 12px;
+                font-size: 13px;
             }
         }
 

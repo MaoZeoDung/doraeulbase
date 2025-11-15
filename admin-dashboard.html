@@ -393,6 +393,143 @@
             padding: 40px;
             color: #999;
         }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 0;
+            }
+
+            .dashboard-header {
+                padding: 15px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 20px;
+            }
+
+            .back-btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .label {
+                font-size: 12px;
+            }
+
+            .value {
+                font-size: 24px;
+            }
+
+            .reports-section {
+                padding: 15px;
+                margin: 15px 0;
+            }
+
+            .section-header h2 {
+                font-size: 16px;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .report-item {
+                padding: 12px;
+                gap: 10px;
+            }
+
+            .report-type-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .report-status-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .report-id {
+                font-size: 11px;
+            }
+
+            .report-content {
+                font-size: 13px;
+            }
+
+            .report-target-title {
+                font-size: 14px;
+            }
+
+            .report-reason {
+                font-size: 12px;
+            }
+
+            .report-meta {
+                font-size: 11px;
+                flex-wrap: wrap;
+            }
+
+            .report-actions {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .report-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                flex: 1;
+                min-width: calc(50% - 3px);
+            }
+
+            .pagination {
+                flex-wrap: wrap;
+                gap: 5px;
+                padding: 10px;
+            }
+
+            .page-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+                min-width: 35px;
+            }
+
+            /* 모달 */
+            .modal-content {
+                width: 90%;
+                max-width: 400px;
+                padding: 20px;
+            }
+
+            .modal-content h3 {
+                font-size: 16px;
+            }
+
+            .modal-content textarea {
+                font-size: 13px;
+            }
+
+            .modal-buttons button {
+                padding: 10px 20px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
